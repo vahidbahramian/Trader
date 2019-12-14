@@ -7,6 +7,7 @@
 #include <string>
 #include <cstring>
 #include <time.h>
+#include <chrono>
 
 
 
@@ -44,8 +45,9 @@ bool read_from_excel_file(std::string file,int numberOfColumn, std::vector<std::
 }
 
 int main() {
-	time_t start, end;
-	time(&start);
+	//time_t start, end;
+	//time(&start);
+	auto started = std::chrono::high_resolution_clock::now();
 	std::vector<std::vector<double>> data;
 	std::vector<std::vector<double>> show(20);
 	double max[20] = { -10,-10,-10,-10,-10,-10,-10,-10,-10,-10,-10,-10,-10,-10,-10,-10,-10,-10,-10,-10 };
@@ -118,9 +120,12 @@ int main() {
 					}
 				}
 			}
-	time(&end);
-	double time_taken = double(end - start);
-	std::cout <<"\t\t\t\t" <<"Execution Time: "<<time_taken << " sec" << std::endl << std::endl;
+	//time(&end);
+	auto done = std::chrono::high_resolution_clock::now();
+	//double execute_time_min = double(end - start);
+	auto execute_time_second = std::chrono::duration_cast<std::chrono::milliseconds>(done - started).count();
+	std::cout <<"\t\t\t\t" <<"Execution Time: "<< execute_time_second << " millisecond"
+		<< std::endl << std::endl;
 
 	for (int i = 0; i < show.size(); i++)
 	{

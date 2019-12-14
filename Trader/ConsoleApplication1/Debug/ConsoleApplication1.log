@@ -1,0 +1,4 @@
+﻿  ConsoleApplication1.cpp
+C:\Users\vahid\Documents\Project\Trader\Trader\ConsoleApplication1\ConsoleApplication1.cpp(45,20): warning C4305:  'initializing': truncation from 'double' to 'float'
+C:\Users\vahid\Documents\Project\Trader\Trader\ConsoleApplication1\ConsoleApplication1.cpp(29,8): warning C4101:  'pch': unreferenced local variable
+  ConsoleApplication1.vcxproj -> C:\Users\vahid\Documents\Project\Trader\Trader\Debug\ConsoleApplication1.exe

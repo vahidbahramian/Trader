@@ -9,6 +9,8 @@
 #include <time.h>
 #include <chrono>
 #include <thread>
+#include <algorithm>
+#include <numeric>
 
 bool read_from_excel_file(std::string file,int numberOfColumn, std::vector<std::vector<double>>& cell)
 {
@@ -44,11 +46,15 @@ std::vector<std::vector<int>> count_one_in_each_column(const std::vector<std::ve
 			{
 				temp.push_back(j);
 			}
+		//std::sort(temp.begin(), temp.end(), [](int a, int b) {
+		//	return a > b;
+		//});
 		data_out.push_back(temp);
 		temp.clear();
 	}
 	return data_out;
 }
+
 std::vector<std::vector<int>> count_if_greater_than_i_for_each_column(const std::vector<std::vector<double>>& data,
 	const std::vector<std::vector<int>>& index_of_data, float factor, int j)
 {
@@ -66,6 +72,46 @@ std::vector<std::vector<int>> count_if_greater_than_i_for_each_column(const std:
 		temp.clear();
 	}
 	return data_out;
+}
+std::vector<int> common_elements(const std::vector<std::vector<int>>& index_of_data)
+{
+	if (index_of_data.size() < 2)
+		return {};
+	std::vector<int> out;
+	int baseIndex = 0;
+	std::vector<int> indices(index_of_data.size() - 1);
+	int totalMatchFound;
+	bool smallestArrayTraversalComplete = false;
+	while ((baseIndex < index_of_data[0].size()) && (!smallestArrayTraversalComplete))
+	{
+		totalMatchFound = 0;
+		for (int i = 1; i < index_of_data.size(); i++)
+		{
+			int currIndex = indices[i - 1];
+			while ((currIndex < index_of_data[i].size()) && (index_of_data[i][currIndex] < index_of_data[0][baseIndex]))
+			{
+				currIndex += 1;
+			}
+			if (currIndex < index_of_data[i].size())
+			{
+				if ((index_of_data[i][currIndex] == index_of_data[0][baseIndex]))
+				{
+					totalMatchFound += 1;
+				}
+			}
+			else
+			{
+				smallestArrayTraversalComplete = true;
+			}
+			indices[i - 1] = currIndex;
+		}
+		if (totalMatchFound == index_of_data.size() - 1)
+		{
+			std::cout << index_of_data[0][baseIndex] << std::endl;
+			out.push_back(index_of_data[0][baseIndex]);
+		}
+		baseIndex += 1;
+	}
 }
 std::vector<std::vector<int>> index_of_two_one_in_equal_index(const std::vector<std::vector<int>>& index_of_data, int k)
 {
@@ -101,10 +147,82 @@ std::vector<std::vector<int>> index_of_two_one_in_equal_index(const std::vector<
 	}
 	return data_out;
 }
+unsigned long long int Factorial(int n)
+{
+	unsigned long long int result = 1;
+	while (n > 1) {
+		result *= n--;
+	}
+	return result;
+}
+
+void PermGenerator(int n, int k)
+{
+
+	std::vector<int> d(n);
+	std::iota(d.begin(), d.end(), 1);
+	std::cout << "These are the Possible Permutations: " << std::endl;
+	unsigned long long int repeat = Factorial(n - k);
+	do
+	{
+		bool isPrint = false;
+		for (int i = 0; i < k; i++)
+		{
+			if (d[i] > d[i+1] && (i+1 < k))
+				isPrint = true;
+		}
+		if (!isPrint)
+		{
+			for (int i = 0; i < k; i++)
+			{
+				std::cout << d[i] << " ";
+			}
+			std::cout << std::endl;
+		}
+		for (unsigned long long int i = 1; i != repeat; ++i)
+		{
+			next_permutation(d.begin(), d.end());
+		}
+	} while (next_permutation(d.begin(), d.end()));
+}
+void makeCombiUtil(std::vector<std::vector<int> >& ans,
+	std::vector<int>& tmp, int n, int left, int k)
+{
+	// Pushing this vector to a vector of vector 
+	if (k == 0) {
+		ans.push_back(tmp);
+		return;
+	}
+
+	// i iterates from left to n. First time 
+	// left will be 1 
+	for (int i = left; i <= n; ++i)
+	{
+		tmp.push_back(i);
+		makeCombiUtil(ans, tmp, n, i + 1, k - 1);
+
+		// Popping out last inserted element 
+		// from the vector 
+		tmp.pop_back();
+	}
+}
+
+// Prints all combinations of size k of numbers 
+// from 1 to n. 
+std::vector<std::vector<int> > makeCombi(int n, int k)
+{
+	std::vector<std::vector<int> > ans;
+	std::vector<int> tmp;
+	makeCombiUtil(ans, tmp, n, 1, k);
+	return ans;
+}
 int main() {
 	//time_t start, end;
 	//time(&start);
 	//std::thread t1(task1, "Hello");
+	//PermGenerator(5, 3);
+	std::vector<std::vector<int> > ans = makeCombi(17, 1);
+
 	auto started = std::chrono::high_resolution_clock::now();
 	std::vector<std::vector<double>> data;
 	std::vector<std::vector<double>> show(20);
@@ -122,12 +240,29 @@ int main() {
 	std::vector<std::vector<int>> b;
 	std::vector<std::vector<int>> bb;
 
+	//auto a = common_elements(c);
 	for (float i = 1.1; i <= 2.1; i += 0.5)
 	{
 		for (int j = 0; j <= 6; j++)
 		{
-			b = count_if_greater_than_i_for_each_column(data, c, i,j+5);
-			for (int k = 0; k <= 16; k++)
+			b = count_if_greater_than_i_for_each_column(data, c, i, j + 5);
+			for (int k = 2; k <= 17; k++)
+			{
+				std::vector<std::vector<int> > ans = makeCombi(17, k);
+				for (int i = 0; i < ans.size(); i++) {
+					std::vector<std::vector<int>> temp;
+					for (int j = 0; j < ans[i].size(); j++) {
+						temp.push_back(c[j]);
+						//cout << ans.at(i).at(j) << " ";
+					}
+					auto a = common_elements(temp);
+					int b = 1;
+				}
+			}
+			
+
+			
+			/*for (int k = 0; k <= 16; k++)
 			{
 				if (c[k].size() != 0)
 					temp = (i * 0.02 * ((float)b[k].size() / (float)c[k].size())) - (0.02 * (1 - ((float)b[k].size() / (float)c[k].size())));
@@ -148,8 +283,9 @@ int main() {
 				for (jj = k; jj <= 16; jj++)
 				{
 					int idx = jj - k;
-					if (cc[idx].size() != 0)
-						temp = (i * 0.02 * ((float)bb[idx].size() / (float)cc[idx].size())) - (0.02 * (1 - ((float)bb[idx].size() / (float)cc[idx].size())));
+					if (cc[idx].size() == 0)
+						continue;
+					temp = (i * 0.02 * ((float)bb[idx].size() / (float)cc[idx].size())) - (0.02 * (1 - ((float)bb[idx].size() / (float)cc[idx].size())));
 					for (int l = 0; l < 20; l++) {
 						if (temp > max[l]) {
 							max[l] = temp;
@@ -167,7 +303,7 @@ int main() {
 				bb.shrink_to_fit();
 				cc.clear();
 				cc.shrink_to_fit();
-			}
+			}*/
 			b.clear();
 			b.shrink_to_fit();
 		}

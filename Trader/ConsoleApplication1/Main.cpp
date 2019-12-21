@@ -107,11 +107,12 @@ std::vector<int> common_elements(const std::vector<std::vector<int>>& index_of_d
 		}
 		if (totalMatchFound == index_of_data.size() - 1)
 		{
-			std::cout << index_of_data[0][baseIndex] << std::endl;
+			//std::cout << index_of_data[0][baseIndex] << std::endl;
 			out.push_back(index_of_data[0][baseIndex]);
 		}
 		baseIndex += 1;
 	}
+	return out;
 }
 std::vector<std::vector<int>> index_of_two_one_in_equal_index(const std::vector<std::vector<int>>& index_of_data, int k)
 {
@@ -251,12 +252,13 @@ int main() {
 				std::vector<std::vector<int> > ans = makeCombi(17, k);
 				for (int i = 0; i < ans.size(); i++) {
 					std::vector<std::vector<int>> temp;
-					for (int j = 0; j < ans[i].size(); j++) {
-						temp.push_back(c[j]);
+					for (int j : ans[i]) {
+						temp.push_back(c[j-1]);
 						//cout << ans.at(i).at(j) << " ";
 					}
 					auto a = common_elements(temp);
-					int b = 1;
+					if(a.size() != 0)
+						int b = 1;
 				}
 			}
 			

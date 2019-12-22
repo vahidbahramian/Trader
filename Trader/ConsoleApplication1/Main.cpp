@@ -11,8 +11,9 @@
 #include <thread>
 #include <algorithm>
 #include <numeric>
+#include <iomanip>
 
-bool read_from_excel_file(std::string file,int numberOfColumn, std::vector<std::vector<double>>& cell)
+bool read_from_excel_file(std::string file,int numberOfColumn, std::vector<std::vector<double>>& cell, std::vector<std::string>& columnTitle)
 {
 	std::string line;
 	std::ifstream infile(file);
@@ -20,15 +21,22 @@ bool read_from_excel_file(std::string file,int numberOfColumn, std::vector<std::
 		return false;
 	std::vector<double> temp_row;
 	std::getline(infile, line, '\n');
+	std::istringstream title(line);
+	std::string buff;
+	for (int i = 0; i < numberOfColumn-1; i++)
+	{
+		title >> buff;
+		columnTitle.push_back(buff);
+	}
+
 	while (std::getline(infile, line, '\n'))
 	{
 		std::istringstream buffer(line);
-		std::vector<std::string> buff(numberOfColumn);
-		for (int i = 0; i < buff.size(); i++)
+		for (int i = 0; i < numberOfColumn; i++)
 		{
-			buffer >> buff[i];
+			buffer >> buff;
 			if (i > 2)
-				temp_row.push_back(std::stod(buff[i]));
+				temp_row.push_back(std::stod(buff));
 		}
 		cell.push_back(temp_row);
 		temp_row.clear();
@@ -54,7 +62,6 @@ std::vector<std::vector<int>> count_one_in_each_column(const std::vector<std::ve
 	}
 	return data_out;
 }
-
 std::vector<std::vector<int>> count_if_greater_than_i_for_each_column(const std::vector<std::vector<double>>& data,
 	const std::vector<std::vector<int>>& index_of_data, float factor, int j)
 {
@@ -156,7 +163,6 @@ unsigned long long int Factorial(int n)
 	}
 	return result;
 }
-
 void PermGenerator(int n, int k)
 {
 
@@ -218,24 +224,23 @@ std::vector<std::vector<int> > makeCombi(int n, int k)
 	return ans;
 }
 int main() {
-	//time_t start, end;
-	//time(&start);
-	//std::thread t1(task1, "Hello");
-	//PermGenerator(5, 3);
-	std::vector<std::vector<int> > ans = makeCombi(17, 1);
-
 	auto started = std::chrono::high_resolution_clock::now();
 	std::vector<std::vector<double>> data;
-	std::vector<std::vector<double>> show(20);
+	std::vector<std::string> title;
 	double max[20] = { -10,-10,-10,-10,-10,-10,-10,-10,-10,-10,-10,-10,-10,-10,-10,-10,-10,-10,-10,-10 };
 
-	read_from_excel_file("saeed.txt", 32, data);
+	read_from_excel_file("saeed.txt", 32, data, title);
 
 	int jj;
-	double temp;
+	double temp_max;
+
+	std::vector<std::vector<double>> show(20);
 	for (int i = 0; i < 20; i++)
 		show[i] = std::vector<double>(6);
 
+	std::vector<std::string> show_title(20);
+
+	std::vector<std::vector<int> > ans = makeCombi(17, 1);
 	std::vector<std::vector<int>> c = count_one_in_each_column(data, 12, 28);
 	std::vector<std::vector<int>> cc;
 	std::vector<std::vector<int>> b;
@@ -247,65 +252,58 @@ int main() {
 		for (int j = 0; j <= 6; j++)
 		{
 			b = count_if_greater_than_i_for_each_column(data, c, i, j + 5);
-			for (int k = 2; k <= 17; k++)
+			for (int x = 0; x < b.size(); x++)
 			{
-				std::vector<std::vector<int> > ans = makeCombi(17, k);
-				for (int i = 0; i < ans.size(); i++) {
-					std::vector<std::vector<int>> temp;
-					for (int j : ans[i]) {
-						temp.push_back(c[j-1]);
-						//cout << ans.at(i).at(j) << " ";
-					}
-					auto a = common_elements(temp);
-					if(a.size() != 0)
-						int b = 1;
-				}
-			}
-			
-
-			
-			/*for (int k = 0; k <= 16; k++)
-			{
-				if (c[k].size() != 0)
-					temp = (i * 0.02 * ((float)b[k].size() / (float)c[k].size())) - (0.02 * (1 - ((float)b[k].size() / (float)c[k].size())));
+				if (c.size() == 0 || c[x].size() < 20)
+					continue;
+				temp_max = (i * 0.02 * ((float)b[x].size() / (float)c[x].size())) - (0.02 * (1 - ((float)b[x].size() / (float)c[x].size())));
 				for (int l = 0; l < 20; l++) {
-					if (temp > max[l]) {
-						max[l] = temp;
-						show[l][0] = c[k].size();
-						show[l][1] = b[k].size();
-						show[l][2] = ((float)b[k].size() / (float)c[k].size()) * 100;
+					if (temp_max > max[l]) {
+						max[l] = temp_max;
+						show_title[l] = title[x+14];
+						show[l][0] = c[x].size();
+						show[l][1] = b[x].size();
+						show[l][2] = ((float)b[x].size() / (float)c[x].size()) * 100;
 						show[l][3] = j + 5;
 						show[l][4] = i;
 						show[l][5] = max[l] * 100;
 						break;
 					}
 				}
-				cc = index_of_two_one_in_equal_index(c,k);
-				bb = count_if_greater_than_i_for_each_column(data, cc, i, j+5);
-				for (jj = k; jj <= 16; jj++)
-				{
-					int idx = jj - k;
-					if (cc[idx].size() == 0)
+			}
+
+			for (int k = 2; k <= 17; k++)
+			{
+				std::vector<std::vector<int> > ans = makeCombi(17, k);
+				for (int x = 0; x < ans.size(); x++) {
+					std::vector<std::vector<int>> temp;
+					std::string temp_title="";
+					cc.clear();
+					for (auto j : ans[x]) {
+						temp.push_back(c[j-1]);
+						temp_title += title[j + 13] + "--";
+					}
+					cc.push_back(common_elements(temp));
+					temp.clear();
+					bb = count_if_greater_than_i_for_each_column(data, cc, i, j + 5);
+					if (cc.size() == 0 || cc[0].size() < 20)
 						continue;
-					temp = (i * 0.02 * ((float)bb[idx].size() / (float)cc[idx].size())) - (0.02 * (1 - ((float)bb[idx].size() / (float)cc[idx].size())));
+					temp_max = (i * 0.02 * ((float)bb[0].size() / (float)cc[0].size())) - (0.02 * (1 - ((float)bb[0].size() / (float)cc[0].size())));
 					for (int l = 0; l < 20; l++) {
-						if (temp > max[l]) {
-							max[l] = temp;
-							show[l][0] = cc[idx].size();
-							show[l][1] = bb[idx].size();
-							show[l][2] = ((float)bb[idx].size() / (float)cc[idx].size()) * 100;
-							show[l][3] = j+5;
+						if (temp_max > max[l]) {
+							max[l] = temp_max;
+							show_title[l] = temp_title;
+							show[l][0] = cc[0].size();
+							show[l][1] = bb[0].size();
+							show[l][2] = ((float)bb[0].size() / (float)cc[0].size()) * 100;
+							show[l][3] = j + 5;
 							show[l][4] = i;
 							show[l][5] = max[l] * 100;
 							break;
 						}
 					}
 				}
-				bb.clear();
-				bb.shrink_to_fit();
-				cc.clear();
-				cc.shrink_to_fit();
-			}*/
+			}
 			b.clear();
 			b.shrink_to_fit();
 		}
@@ -319,9 +317,10 @@ int main() {
 
 	for (int i = 0; i < show.size(); i++)
 	{
+		std::cout << show_title[i] << "\t\t\t\t\t\t\t";
 		for (int j = 0; j < show[0].size(); j++)
 		{
-			std::cout << "\t" << show[i][j];
+			 std::cout << std::fixed << std::setprecision(1) << show[i][j];
 			if (j == 2 || j == 5)
 				std::cout << "%";
 			std::cout << "\t";

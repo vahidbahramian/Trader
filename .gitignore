@@ -8,4 +8,15 @@
 *.db
 *.opendb
 *.ipch
+*.db-shm
+*.db-wal
+*.tlog
+*.log
+*.obj
+*.idb
+*.pdb
+*.enc
+*.ilk
+*.iobj
+*.ipdb
 /main.cpp

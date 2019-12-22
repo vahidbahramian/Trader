@@ -1,0 +1,4 @@
+File_Name = saeed.txt
+Number_Of_Column = 31
+Number_Of_Maximum_Output = 20
+Number_Of_K_Column = 17

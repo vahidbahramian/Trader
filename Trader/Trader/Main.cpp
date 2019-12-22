@@ -54,9 +54,6 @@ std::vector<std::vector<int>> count_one_in_each_column(const std::vector<std::ve
 			{
 				temp.push_back(j);
 			}
-		//std::sort(temp.begin(), temp.end(), [](int a, int b) {
-		//	return a > b;
-		//});
 		data_out.push_back(temp);
 		temp.clear();
 	}
@@ -114,7 +111,6 @@ std::vector<int> common_elements(const std::vector<std::vector<int>>& index_of_d
 		}
 		if (totalMatchFound == index_of_data.size() - 1)
 		{
-			//std::cout << index_of_data[0][baseIndex] << std::endl;
 			out.push_back(index_of_data[0][baseIndex]);
 		}
 		baseIndex += 1;
@@ -272,7 +268,7 @@ int main() {
 				}
 			}
 
-			for (int k = 2; k <= 17; k++)
+			for (int k = 2; k <= 3; k++)
 			{
 				std::vector<std::vector<int> > ans = makeCombi(17, k);
 				for (int x = 0; x < ans.size(); x++) {
@@ -284,6 +280,7 @@ int main() {
 						temp_title += title[j + 13] + "--";
 					}
 					cc.push_back(common_elements(temp));
+					temp_title.erase(temp_title.end() - 2, temp_title.end());
 					temp.clear();
 					bb = count_if_greater_than_i_for_each_column(data, cc, i, j + 5);
 					if (cc.size() == 0 || cc[0].size() < 20)
@@ -317,7 +314,9 @@ int main() {
 
 	for (int i = 0; i < show.size(); i++)
 	{
-		std::cout << show_title[i] << "\t\t\t\t\t\t\t";
+		std::cout.width(100);
+		std::cout.setf(std::ios::left, std::ios::adjustfield);
+		std::cout << show_title[i] << "\t";
 		for (int j = 0; j < show[0].size(); j++)
 		{
 			 std::cout << std::fixed << std::setprecision(1) << show[i][j];

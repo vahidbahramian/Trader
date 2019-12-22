@@ -107,11 +107,12 @@ std::vector<int> common_elements(const std::vector<std::vector<int>>& index_of_d
 		}
 		if (totalMatchFound == index_of_data.size() - 1)
 		{
-			std::cout << index_of_data[0][baseIndex] << std::endl;
+			//std::cout << index_of_data[0][baseIndex] << std::endl;
 			out.push_back(index_of_data[0][baseIndex]);
 		}
 		baseIndex += 1;
 	}
+	return out;
 }
 std::vector<std::vector<int>> index_of_two_one_in_equal_index(const std::vector<std::vector<int>>& index_of_data, int k)
 {
@@ -231,7 +232,7 @@ int main() {
 	read_from_excel_file("saeed.txt", 32, data);
 
 	int jj;
-	double temp;
+	double temp_max;
 	for (int i = 0; i < 20; i++)
 		show[i] = std::vector<double>(6);
 
@@ -246,17 +247,52 @@ int main() {
 		for (int j = 0; j <= 6; j++)
 		{
 			b = count_if_greater_than_i_for_each_column(data, c, i, j + 5);
-			for (int k = 2; k <= 17; k++)
+			for (int x = 0; x < b.size(); x++)
+			{
+				if (c.size() == 0 || c[x].size() < 20)
+					continue;
+				temp_max = (i * 0.02 * ((float)b[x].size() / (float)c[x].size())) - (0.02 * (1 - ((float)b[x].size() / (float)c[x].size())));
+				for (int l = 0; l < 20; l++) {
+					if (temp_max > max[l]) {
+						max[l] = temp_max;
+						show[l][0] = c[x].size();
+						show[l][1] = b[x].size();
+						show[l][2] = ((float)b[x].size() / (float)c[x].size()) * 100;
+						show[l][3] = j + 5;
+						show[l][4] = i;
+						show[l][5] = max[l] * 100;
+						break;
+					}
+				}
+			}
+
+			for (int k = 2; k <= 2; k++)
 			{
 				std::vector<std::vector<int> > ans = makeCombi(17, k);
-				for (int i = 0; i < ans.size(); i++) {
+				for (int x = 0; x < ans.size(); x++) {
 					std::vector<std::vector<int>> temp;
-					for (int j = 0; j < ans[i].size(); j++) {
-						temp.push_back(c[j]);
-						//cout << ans.at(i).at(j) << " ";
+					cc.clear();
+					for (auto j : ans[x]) {
+						temp.push_back(c[j-1]);
 					}
-					auto a = common_elements(temp);
-					int b = 1;
+					cc.push_back(common_elements(temp));
+					temp.clear();
+					bb = count_if_greater_than_i_for_each_column(data, cc, i, j + 5);
+					if (cc.size() == 0 || cc[0].size() < 20)
+						continue;
+					temp_max = (i * 0.02 * ((float)bb[0].size() / (float)cc[0].size())) - (0.02 * (1 - ((float)bb[0].size() / (float)cc[0].size())));
+					for (int l = 0; l < 20; l++) {
+						if (temp_max > max[l]) {
+							max[l] = temp_max;
+							show[l][0] = cc[0].size();
+							show[l][1] = bb[0].size();
+							show[l][2] = ((float)bb[0].size() / (float)cc[0].size()) * 100;
+							show[l][3] = j + 5;
+							show[l][4] = i;
+							show[l][5] = max[l] * 100;
+							break;
+						}
+					}
 				}
 			}
 			

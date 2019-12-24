@@ -12,7 +12,55 @@
 #include <algorithm>
 #include <numeric>
 #include <iomanip>
+#include <iterator>
 
+struct ConfigParam
+{
+	std::string fileName;
+	int columnNumber;
+	int maxOutput;
+	int beginKColumn;
+	int endKColumn;
+	int beginJColumn;
+	int endJColumn;
+	std::vector<float> IValues;
+	int combination;
+}m_ConfigParam;
+bool read_config(std::string config)
+{
+	std::string line;
+	std::ifstream infile(config);
+	if (!infile.is_open())
+		return false;
+	while (std::getline(infile, line, '\n'))
+	{
+		if (line == "")
+			continue;
+		std::istringstream buffer(line);
+		std::vector<std::string> results(std::istream_iterator<std::string>{buffer},
+			std::istream_iterator<std::string>());
+		if (results[0] == "File_Name")
+			m_ConfigParam.fileName = results[2];
+		else if (results[0] == "Number_Of_Column")
+			m_ConfigParam.columnNumber = std::stoi(results[2]);
+		else if (results[0] == "Number_Of_Maximum_Output")
+			m_ConfigParam.maxOutput = std::stoi(results[2]);
+		else if (results[0] == "Begin_Column_Of_K")
+			m_ConfigParam.beginKColumn = std::stoi(results[2]);
+		else if (results[0] == "End_Column_Of_K")
+			m_ConfigParam.endKColumn = std::stoi(results[2]);
+		else if (results[0] == "Begin_Column_Of_J")
+			m_ConfigParam.beginJColumn = std::stoi(results[2]);
+		else if (results[0] == "End_Column_Of_J")
+			m_ConfigParam.endJColumn = std::stoi(results[2]);
+		else if (results[0] == "I_Values")
+			for(int i = 2; i < results.size(); i++)
+				m_ConfigParam.IValues.push_back(std::stof(results[i]));
+		else if (results[0] == "Maximum_Combination")
+			m_ConfigParam.combination = std::stoi(results[2]);
+	}
+	return true;
+}
 bool read_from_excel_file(std::string file,int numberOfColumn, std::vector<std::vector<double>>& cell, std::vector<std::string>& columnTitle)
 {
 	std::string line;
@@ -221,46 +269,49 @@ std::vector<std::vector<int> > makeCombi(int n, int k)
 }
 int main() {
 	auto started = std::chrono::high_resolution_clock::now();
+	read_config("Config.txt");
 	std::vector<std::vector<double>> data;
 	std::vector<std::string> title;
 	double max[20] = { -10,-10,-10,-10,-10,-10,-10,-10,-10,-10,-10,-10,-10,-10,-10,-10,-10,-10,-10,-10 };
 
-	read_from_excel_file("saeed.txt", 32, data, title);
+	read_from_excel_file(m_ConfigParam.fileName, m_ConfigParam.columnNumber+1, data, title);
 
+	int numberOfK = (m_ConfigParam.endKColumn - m_ConfigParam.beginKColumn) + 1;
+	int numberOfJ = (m_ConfigParam.endJColumn - m_ConfigParam.beginJColumn) + 1;
 	int jj;
 	double temp_max;
 
-	std::vector<std::vector<double>> show(20);
-	for (int i = 0; i < 20; i++)
+	std::vector<std::vector<double>> show(m_ConfigParam.maxOutput);
+	for (int i = 0; i < show.size(); i++)
 		show[i] = std::vector<double>(6);
 
-	std::vector<std::string> show_title(20);
+	std::vector<std::string> show_title(m_ConfigParam.maxOutput);
 
-	std::vector<std::vector<int> > ans = makeCombi(17, 1);
-	std::vector<std::vector<int>> c = count_one_in_each_column(data, 12, 28);
+	std::vector<std::vector<int> > ans = makeCombi(numberOfK, 1);
+	std::vector<std::vector<int>> c = count_one_in_each_column(data, 12, 28);////////////
 	std::vector<std::vector<int>> cc;
 	std::vector<std::vector<int>> b;
 	std::vector<std::vector<int>> bb;
 
 	//auto a = common_elements(c);
-	for (float i = 1.1; i <= 2.1; i += 0.5)
+	for (float i : m_ConfigParam.IValues)
 	{
-		for (int j = 0; j <= 6; j++)
+		for (int j = 0; j < numberOfJ; j++)
 		{
-			b = count_if_greater_than_i_for_each_column(data, c, i, j + 5);
+			b = count_if_greater_than_i_for_each_column(data, c, i, j + 5);//////////////
 			for (int x = 0; x < b.size(); x++)
 			{
 				if (c.size() == 0 || c[x].size() < 20)
 					continue;
 				temp_max = (i * 0.02 * ((float)b[x].size() / (float)c[x].size())) - (0.02 * (1 - ((float)b[x].size() / (float)c[x].size())));
-				for (int l = 0; l < 20; l++) {
+				for (int l = 0; l < show.size(); l++) {
 					if (temp_max > max[l]) {
 						max[l] = temp_max;
-						show_title[l] = title[x+14];
+						show_title[l] = title[x + m_ConfigParam.beginKColumn - 1];
 						show[l][0] = c[x].size();
 						show[l][1] = b[x].size();
 						show[l][2] = ((float)b[x].size() / (float)c[x].size()) * 100;
-						show[l][3] = j + 5;
+						show[l][3] = j + 5;////////////////
 						show[l][4] = i;
 						show[l][5] = max[l] * 100;
 						break;
@@ -268,25 +319,25 @@ int main() {
 				}
 			}
 
-			for (int k = 2; k <= 3; k++)
+			for (int k = 2; k <= m_ConfigParam.combination; k++)
 			{
-				std::vector<std::vector<int> > ans = makeCombi(17, k);
+				std::vector<std::vector<int> > ans = makeCombi(numberOfK, k);
 				for (int x = 0; x < ans.size(); x++) {
 					std::vector<std::vector<int>> temp;
 					std::string temp_title="";
 					cc.clear();
 					for (auto j : ans[x]) {
 						temp.push_back(c[j-1]);
-						temp_title += title[j + 13] + "--";
+						temp_title += title[j + m_ConfigParam.beginKColumn - 2] + "--";
 					}
 					cc.push_back(common_elements(temp));
 					temp_title.erase(temp_title.end() - 2, temp_title.end());
 					temp.clear();
-					bb = count_if_greater_than_i_for_each_column(data, cc, i, j + 5);
+					bb = count_if_greater_than_i_for_each_column(data, cc, i, j + 5);///////////////
 					if (cc.size() == 0 || cc[0].size() < 20)
 						continue;
 					temp_max = (i * 0.02 * ((float)bb[0].size() / (float)cc[0].size())) - (0.02 * (1 - ((float)bb[0].size() / (float)cc[0].size())));
-					for (int l = 0; l < 20; l++) {
+					for (int l = 0; l < show.size() ; l++) {
 						if (temp_max > max[l]) {
 							max[l] = temp_max;
 							show_title[l] = temp_title;
@@ -319,9 +370,11 @@ int main() {
 		std::cout << show_title[i] << "\t";
 		for (int j = 0; j < show[0].size(); j++)
 		{
-			 std::cout << std::fixed << std::setprecision(1) << show[i][j];
+			
 			if (j == 2 || j == 5)
-				std::cout << "%";
+				std::cout << std::fixed << std::setprecision(1) << show[i][j] << "%";
+			else
+				std::cout <<std::noshowpoint <<std::setprecision(0) << show[i][j];
 			std::cout << "\t";
 		}
 		std::cout << std::endl;

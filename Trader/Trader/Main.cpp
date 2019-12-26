@@ -12,6 +12,7 @@
 #include <algorithm>
 #include <numeric>
 #include <iomanip>
+#include <windows.h>
 
 bool read_from_excel_file(std::string file,int numberOfColumn, std::vector<std::vector<double>>& cell, std::vector<std::string>& columnTitle)
 {
@@ -219,8 +220,25 @@ std::vector<std::vector<int> > makeCombi(int n, int k)
 	makeCombiUtil(ans, tmp, n, 1, k);
 	return ans;
 }
+void SetWindow(int Width, int Height)
+{
+	_COORD coord;
+	coord.X = Width;
+	coord.Y = Height;
+
+	_SMALL_RECT Rect;
+	Rect.Top = 0;
+	Rect.Left = 0;
+	Rect.Bottom = Height - 1;
+	Rect.Right = Width - 1;
+
+	HANDLE Handle = GetStdHandle(STD_OUTPUT_HANDLE);      // Get Handle 
+	SetConsoleScreenBufferSize(Handle, coord);            // Set Buffer Size 
+	SetConsoleWindowInfo(Handle, TRUE, &Rect);            // Set Window Size 
+}
 int main() {
 	auto started = std::chrono::high_resolution_clock::now();
+	SetWindow(200, 40);
 	std::vector<std::vector<double>> data;
 	std::vector<std::string> title;
 	double max[20] = { -10,-10,-10,-10,-10,-10,-10,-10,-10,-10,-10,-10,-10,-10,-10,-10,-10,-10,-10,-10 };

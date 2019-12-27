@@ -14,6 +14,7 @@
 #include <iomanip>
 #include <iterator>
 #include <windows.h>
+#include <map>
 
 struct ConfigParam
 {
@@ -26,6 +27,8 @@ struct ConfigParam
 	int endJColumn;
 	std::vector<float> IValues;
 	int combination;
+	int cSmallerThan;
+
 }m_ConfigParam;
 bool read_config(std::string config)
 {
@@ -59,10 +62,13 @@ bool read_config(std::string config)
 				m_ConfigParam.IValues.push_back(std::stof(results[i]));
 		else if (results[0] == "Maximum_Combination")
 			m_ConfigParam.combination = std::stoi(results[2]);
+		else if (results[0] == "C_Smaller_Than")
+			m_ConfigParam.cSmallerThan = std::stoi(results[2]);
 	}
 	return true;
 }
-bool read_from_excel_file(std::string file,int numberOfColumn, std::vector<std::vector<double>>& cell, std::vector<std::string>& columnTitle)
+bool read_from_excel_file(std::string file,int numberOfColumn, std::vector<std::vector<double>>& cell,
+	std::vector<std::string>& columnTitle, std::vector<tm>& date)
 {
 	std::string line;
 	std::ifstream infile(file);
@@ -81,11 +87,38 @@ bool read_from_excel_file(std::string file,int numberOfColumn, std::vector<std::
 	while (std::getline(infile, line, '\n'))
 	{
 		std::istringstream buffer(line);
+		tm temp_date;
 		for (int i = 0; i < numberOfColumn; i++)
 		{
 			buffer >> buff;
 			if (i > 2)
 				temp_row.push_back(std::stod(buff));
+			else
+			{
+				char p[30];
+				strcpy(p, buff.c_str());
+				char* pch;
+				if (i == 0)
+				{
+					pch = strtok(p, " ,.-:/");
+					temp_date.tm_mday = atoi(pch);
+					temp_date.tm_mon = atoi(strtok(NULL, " ,.-:/"));
+					temp_date.tm_year = atoi(strtok(NULL, " ,.-:/"));
+				}
+				else if (i == 1)
+				{
+					pch = strtok(p, " ,.-:/");
+					temp_date.tm_hour = atoi(pch); //get the hour value
+					temp_date.tm_min = atoi(strtok(NULL, " ,.-:/")); //get the min value
+					temp_date.tm_sec = atoi(strtok(NULL, " ,.-:/"));
+					buffer >> buff;
+					if (buff == "PM")
+						temp_date.tm_hour += 12;
+					i++;
+
+					date.push_back(temp_date);
+				}
+			}
 		}
 		cell.push_back(temp_row);
 		temp_row.clear();
@@ -129,7 +162,16 @@ std::vector<std::vector<int>> count_if_greater_than_i_for_each_column(const std:
 std::vector<int> common_elements(const std::vector<std::vector<int>>& index_of_data)
 {
 	if (index_of_data.size() < 2)
-		return {};
+	{
+		std::vector<int> temp;
+		for (int j = 0; j < index_of_data[0].size(); j++)
+			if (index_of_data[0][j] == 1)
+			{
+				temp.push_back(j);
+			}
+		return temp;
+	}
+
 	std::vector<int> out;
 	int baseIndex = 0;
 	std::vector<int> indices(index_of_data.size() - 1);
@@ -290,14 +332,16 @@ int main() {
 	SetWindow(200, 40);
 	std::vector<std::vector<double>> data;
 	std::vector<std::string> title;
+	std::vector<tm> date;
 	double max[20] = { -10,-10,-10,-10,-10,-10,-10,-10,-10,-10,-10,-10,-10,-10,-10,-10,-10,-10,-10,-10 };
 
-	read_from_excel_file(m_ConfigParam.fileName, m_ConfigParam.columnNumber+1, data, title);
+	read_from_excel_file(m_ConfigParam.fileName, m_ConfigParam.columnNumber+1, data, title, date);
 
 	int numberOfK = (m_ConfigParam.endKColumn - m_ConfigParam.beginKColumn) + 1;
 	int numberOfJ = (m_ConfigParam.endJColumn - m_ConfigParam.beginJColumn) + 1;
 	int jj;
 	double temp_max;
+	std::map<std::string, std::vector<int>> ccc;
 
 	std::vector<std::vector<double>> show(m_ConfigParam.maxOutput);
 	for (int i = 0; i < show.size(); i++)
@@ -305,8 +349,8 @@ int main() {
 
 	std::vector<std::string> show_title(m_ConfigParam.maxOutput);
 
-	std::vector<std::vector<int> > ans = makeCombi(numberOfK, 1);
-	std::vector<std::vector<int>> c = count_one_in_each_column(data, 12, 28);////////////
+	std::vector<std::vector<int> > ans;// = makeCombi(numberOfK, 1);
+	std::vector<std::vector<int>> c = count_one_in_each_column(data, m_ConfigParam.beginKColumn - 3, m_ConfigParam.endKColumn - 3);
 	std::vector<std::vector<int>> cc;
 	std::vector<std::vector<int>> b;
 	std::vector<std::vector<int>> bb;
@@ -316,45 +360,32 @@ int main() {
 	{
 		for (int j = 0; j < numberOfJ; j++)
 		{
-			b = count_if_greater_than_i_for_each_column(data, c, i, j + 5);//////////////
-			for (int x = 0; x < b.size(); x++)
+			for (int k = 1; k <= m_ConfigParam.combination; k++)
 			{
-				if (c.size() == 0 || c[x].size() < 20)
-					continue;
-				temp_max = (i * 0.02 * ((float)b[x].size() / (float)c[x].size())) - (0.02 * (1 - ((float)b[x].size() / (float)c[x].size())));
-				for (int l = 0; l < show.size(); l++) {
-					if (temp_max > max[l]) {
-						max[l] = temp_max;
-						show_title[l] = title[x + m_ConfigParam.beginKColumn - 1];
-						show[l][0] = c[x].size();
-						show[l][1] = b[x].size();
-						show[l][2] = ((float)b[x].size() / (float)c[x].size()) * 100;
-						show[l][3] = j + 5;////////////////
-						show[l][4] = i;
-						show[l][5] = max[l] * 100;
-						break;
-					}
-				}
-			}
-
-			for (int k = 2; k <= m_ConfigParam.combination; k++)
-			{
-				std::vector<std::vector<int> > ans = makeCombi(numberOfK, k);
+				ans = makeCombi(numberOfK, k);
 				for (int x = 0; x < ans.size(); x++) {
 					std::vector<std::vector<int>> temp;
 					std::string temp_title="";
+					std::string key_map;
 					cc.clear();
-					for (auto j : ans[x]) {
-						temp.push_back(c[j-1]);
-						temp_title += title[j + m_ConfigParam.beginKColumn - 2] + "--";
+					for (int j = 0; j < ans[x].size();j++) {
+						key_map += std::to_string(ans[x][j]) + "-";
+						if(ans[x].size() - j == 2)
+							temp.push_back(ccc[key_map]);
+						if (ans[x].size() - j == 1)
+							temp.push_back(c[ans[x][j] - 1]);
+						temp_title += title[ans[x][j] + m_ConfigParam.beginKColumn - 2] + "--";
 					}
-					cc.push_back(common_elements(temp));
+					if (temp.size() > 1)
+						cc.push_back(common_elements(temp));
+					else
+						cc.push_back(temp[0]);
+					ccc[key_map] = cc[0];
 					temp_title.erase(temp_title.end() - 2, temp_title.end());
-					temp.clear();
-					bb = count_if_greater_than_i_for_each_column(data, cc, i, j + 5);///////////////
-					if (cc.size() == 0 || cc[0].size() < 20)
+					bb = count_if_greater_than_i_for_each_column(data, cc, i, j + 5);
+					if (cc.size() == 0 || cc[0].size() < m_ConfigParam.cSmallerThan)
 						continue;
-					temp_max = (i * 0.02 * ((float)bb[0].size() / (float)cc[0].size())) - (0.02 * (1 - ((float)bb[0].size() / (float)cc[0].size())));
+					temp_max = (float)cc[0].size()* (i * 0.02 * ((float)bb[0].size() / (float)cc[0].size())) - (float)cc[0].size() * (0.02 * (1 - ((float)bb[0].size() / (float)cc[0].size())));
 					for (int l = 0; l < show.size() ; l++) {
 						if (temp_max > max[l]) {
 							max[l] = temp_max;
@@ -369,6 +400,7 @@ int main() {
 						}
 					}
 				}
+				ans.clear();
 			}
 			b.clear();
 			b.shrink_to_fit();

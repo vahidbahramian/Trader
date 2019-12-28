@@ -6,5 +6,5 @@ End_Column_Of_K = 31
 Begin_Column_Of_J = 8
 End_Column_Of_J = 14
 I_Values = 1.1 1.6 2.1
-Maximum_Combination = 2
+Maximum_Combination = 17
 C_Smaller_Than = 1

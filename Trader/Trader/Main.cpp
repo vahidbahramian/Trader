@@ -437,6 +437,7 @@ int main() {
 		c = count_one_in_each_column(dataMonth[m], m_ConfigParam.beginKColumn - 3, m_ConfigParam.endKColumn - 3);
 		for (int s = 0; s < show.size(); s++)
 		{
+			show[s].clear();
 			std::vector<std::vector<int>> temp;
 			cc.clear();
 			for (int x = 0; x < k_store[s].size(); x++)
@@ -449,17 +450,20 @@ int main() {
 				cc.push_back(temp[0]);
 			float i = show_final[0][s][4];
 			int j = show_final[0][s][3];
-			cc.push_back(k_store[s]);
 			bb = count_if_greater_than_i_for_each_column(dataMonth[m], cc, i, j + 5);
 			if (cc.size() == 0 || cc[0].size() < m_ConfigParam.cSmallerThan)
-				continue;
-			temp_max = (float)cc[0].size() * (i * 0.02 * ((float)bb[0].size() / (float)cc[0].size())) - (float)cc[0].size() * (0.02 * (1 - ((float)bb[0].size() / (float)cc[0].size())));
-			show[s][0] = cc[0].size();
-			show[s][1] = bb[0].size();
-			show[s][2] = ((float)bb[0].size() / (float)cc[0].size()) * 100;
-			show[s][3] = j + 5;
-			show[s][4] = i;
-			show[s][5] = temp_max * 100;
+				show[s].clear();
+			else
+			{
+				temp_max = (float)cc[0].size() * (i * 0.02 * ((float)bb[0].size() / (float)cc[0].size())) - (float)cc[0].size() * (0.02 * (1 - ((float)bb[0].size() / (float)cc[0].size())));
+				show[s].push_back(cc[0].size());
+				show[s].push_back(bb[0].size());
+				show[s].push_back(((float)bb[0].size() / (float)cc[0].size()) * 100);
+				show[s].push_back(j);
+				show[s].push_back(i);
+				show[s].push_back(temp_max * 100);
+			}
+
 		}
 		show_final.push_back(show);
 	}
@@ -480,21 +484,25 @@ int main() {
 			temp += dataMonth[i-1].size() - 1;
 		}
 
-		for (int j = 0; j < show_final[0].size(); j++)
+		for (int j = 0; j < show_final[i].size(); j++)
 		{
 			std::cout.width(100);
 			std::cout.setf(std::ios::left, std::ios::adjustfield);
-			std::cout << show_title[j] << "\t";
-			for (int k = 0; k < show_final[0][0].size(); k++)
+			if (show_final[i][j].size() != 0)
 			{
+				std::cout << show_title[j] << "\t";
+				for (int k = 0; k < show_final[i][j].size(); k++)
+				{
 
-				if (k == 2 || k == 5)
-					std::cout << std::fixed << std::setprecision(1) << show_final[i][j][k] << "%";
-				else
-					std::cout << std::noshowpoint << std::setprecision(0) << show_final[i][j][k];
-				std::cout << "\t";
+					if (k == 2 || k == 5)
+						std::cout << std::fixed << std::setprecision(1) << show_final[i][j][k] << "%";
+					else
+						std::cout << std::noshowpoint << std::setprecision(0) << show_final[i][j][k];
+					std::cout << "\t";
+				}
+				std::cout << std::endl;
 			}
-			std::cout << std::endl;
+
 		}
 		std::cout << "\n\n";
 	}

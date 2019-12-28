@@ -141,7 +141,7 @@ void split_data_to_month(std::vector<std::vector<double>>& data, std::vector<tm>
 		}
 		last_month = date[i].tm_mon;
 	}
-
+	dataMonth.push_back(temp);
 }
 std::vector<std::vector<int>> count_one_in_each_column(const std::vector<std::vector<double>>& data, int begin, int end)
 {
@@ -160,6 +160,33 @@ std::vector<std::vector<int>> count_one_in_each_column(const std::vector<std::ve
 	return data_out;
 }
 std::vector<std::vector<int>> count_if_greater_than_i_for_each_column(const std::vector<std::vector<double>>& data,
+	std::vector<tm>& date ,const std::vector<std::vector<int>>& index_of_data, float factor, int j, int& days)
+{
+	std::vector<int> temp;
+	temp.clear();
+	std::vector<std::vector<int>> data_out;
+	for (int i = 0; i < index_of_data.size(); i++)
+	{
+		int last_day = 0;
+		int last_month = 0;
+		for (int k : index_of_data[i])
+		{
+			if (data[k][j] >= factor)
+			{
+				temp.push_back(k);
+			}
+			if (date[k].tm_mday != last_day || date[k].tm_mon != last_month)
+				days++;
+			last_day = date[k].tm_mday;
+			last_month = date[k].tm_mon;
+		}
+
+		data_out.push_back(temp);
+		temp.clear();
+	}
+	return data_out;
+}
+std::vector<std::vector<int>> count_if_greater_than_i_for_each_column(const std::vector<std::vector<double>>& data,
 	const std::vector<std::vector<int>>& index_of_data, float factor, int j)
 {
 	std::vector<int> temp;
@@ -167,11 +194,13 @@ std::vector<std::vector<int>> count_if_greater_than_i_for_each_column(const std:
 	std::vector<std::vector<int>> data_out;
 	for (int i = 0; i < index_of_data.size(); i++)
 	{
-		for(int k : index_of_data[i])
+		for (int k : index_of_data[i])
+		{
 			if (data[k][j] >= factor)
 			{
 				temp.push_back(k);
 			}
+		}
 		data_out.push_back(temp);
 		temp.clear();
 	}
@@ -347,7 +376,7 @@ void SetWindow(int Width, int Height)
 int main() {
 	auto started = std::chrono::high_resolution_clock::now();
 	read_config("Config.txt");
-	SetWindow(200, 1000);
+	SetWindow(200, 3000);
 
 	std::vector<std::vector<double>> data;
 	std::vector<std::vector<std::vector<double>>> dataMonth;
@@ -356,6 +385,8 @@ int main() {
 	read_from_excel_file(m_ConfigParam.fileName, m_ConfigParam.columnNumber+1, data, title, date);
 	split_data_to_month(data, date, dataMonth);
 
+	std::vector<int> inMonth(m_ConfigParam.maxOutput,0);
+	std::vector<int> num_days(m_ConfigParam.maxOutput);
 	std::vector<std::vector<int>> k_store(m_ConfigParam.maxOutput);
 	std::vector<std::string> show_title(m_ConfigParam.maxOutput);
 	std::vector<std::vector<double>> show(m_ConfigParam.maxOutput);
@@ -373,7 +404,7 @@ int main() {
 	std::vector<std::vector<int>> cc;
 	std::vector<std::vector<int>> bb;
 
-	double max[20] = { -10,-10,-10,-10,-10,-10,-10,-10,-10,-10,-10,-10,-10,-10,-10,-10,-10,-10,-10,-10 };
+	std::vector<double> maxx(m_ConfigParam.maxOutput,-10);
 	std::vector<std::vector<int>> c;
 
 	c = count_one_in_each_column(data, m_ConfigParam.beginKColumn - 3, m_ConfigParam.endKColumn - 3);
@@ -403,25 +434,27 @@ int main() {
 						cc.push_back(temp[0]);
 					ccc[key_map] = cc[0];
 					temp_title.erase(temp_title.end() - 2, temp_title.end());
-					bb = count_if_greater_than_i_for_each_column(data, cc, i, j + 5);
+					int days = 0;
+					bb = count_if_greater_than_i_for_each_column(data, date, cc, i, j + 5, days);
 					if (cc.size() == 0 || cc[0].size() < m_ConfigParam.cSmallerThan)
 						continue;
 					temp_max = (float)cc[0].size() * (i * 0.02 * ((float)bb[0].size() / (float)cc[0].size())) - (float)cc[0].size() * (0.02 * (1 - ((float)bb[0].size() / (float)cc[0].size())));
 					for (int l = 0; l < show.size(); l++) {
-						if (temp_max > max[l]) {
-							max[l] = temp_max;
+						if (temp_max > maxx[l]) {
+							maxx[l] = temp_max;
 							show_title[l] = temp_title;
 							show[l][0] = cc[0].size();
 							show[l][1] = bb[0].size();
 							show[l][2] = ((float)bb[0].size() / (float)cc[0].size()) * 100;
 							show[l][3] = j + 5;
 							show[l][4] = i;
-							show[l][5] = max[l] * 100;
+							show[l][5] = maxx[l] * 100;
 							k_store[l].clear();
 							for (int a = 0; a < ans[x].size(); a++)
 							{
-								k_store[l].push_back(ans[x][a]);
+								k_store[l].push_back(ans[x][a] - 1);
 							}
+							num_days[l] = days;
 							break;
 						}
 					}
@@ -450,8 +483,8 @@ int main() {
 				cc.push_back(temp[0]);
 			float i = show_final[0][s][4];
 			int j = show_final[0][s][3];
-			bb = count_if_greater_than_i_for_each_column(dataMonth[m], cc, i, j + 5);
-			if (cc.size() == 0 || cc[0].size() < m_ConfigParam.cSmallerThan)
+			bb = count_if_greater_than_i_for_each_column(dataMonth[m], cc, i, j);
+			if (cc.size() == 0 || cc[0].size() < 1)
 				show[s].clear();
 			else
 			{
@@ -462,6 +495,7 @@ int main() {
 				show[s].push_back(j);
 				show[s].push_back(i);
 				show[s].push_back(temp_max * 100);
+				inMonth[s]++;
 			}
 
 		}
@@ -493,10 +527,15 @@ int main() {
 				std::cout << show_title[j] << "\t";
 				for (int k = 0; k < show_final[i][j].size(); k++)
 				{
-
+					if (i == 0 && k == 5)
+						std::cout << num_days[j] << "\t";
+					if (i == 0 && k == 5)
+						std::cout << inMonth[j] << "\t";
 					if (k == 2 || k == 5)
 						std::cout << std::fixed << std::setprecision(1) << show_final[i][j][k] << "%";
-					else
+					else if (k == 4)
+						std::cout << std::fixed << std::setprecision(1) << show_final[i][j][k];
+					else 
 						std::cout << std::noshowpoint << std::setprecision(0) << show_final[i][j][k];
 					std::cout << "\t";
 				}

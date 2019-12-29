@@ -382,8 +382,7 @@ int main() {
 	std::vector<std::vector<std::vector<float>>> dataMonth;
 	std::vector<std::string> title;
 	std::vector<tm> date;
-	read_from_excel_file(m_ConfigParam.fileName, m_ConfigParam.columnNumber+1, data, title, date);
-	split_data_to_month(data, date, dataMonth);
+	read_from_excel_file(m_ConfigParam.fileName, m_ConfigParam.columnNumber + 1, data, title, date);
 
 	std::vector<int> inMonth(m_ConfigParam.maxOutput,0);
 	std::vector<int> num_days(m_ConfigParam.maxOutput);
@@ -407,6 +406,9 @@ int main() {
 	std::vector<float> maxx(m_ConfigParam.maxOutput,-10);
 	std::vector<std::vector<unsigned short>> c;
 
+	std::vector<std::vector<std::string>> erase_map;
+	std::vector<std::string> temp_erase_map(1,"");
+
 	c = count_one_in_each_column(data, m_ConfigParam.beginKColumn - 3, m_ConfigParam.endKColumn - 3);
 	for (float i : m_ConfigParam.IValues)
 	{
@@ -414,14 +416,21 @@ int main() {
 		{
 			for (int k = 1; k <= m_ConfigParam.combination; k++)
 			{
+				erase_map.push_back(temp_erase_map);
+				temp_erase_map.clear();
+				ans.clear();
 				ans = makeCombi(numberOfK, k);
 				for (int x = 0; x < ans.size(); x++) {
 					std::vector<std::vector<unsigned short>> temp;
 					std::string temp_title = "";
-					std::string key_map;
+					std::string key_map = "";
 					cc.clear();
 					for (int p = 0; p < ans[x].size(); p++) {
-						key_map += std::to_string(ans[x][p]) + "-";
+						if (ans[x][p] < 10)
+							key_map += std::to_string(ans[x][p]) + "-";
+						else
+							key_map += std::to_string(ans[x][p]) + "-";
+						
 						if (ans[x].size() - p == 2)
 							temp.push_back(ccc[key_map]);
 						if (ans[x].size() - p == 1)
@@ -433,6 +442,9 @@ int main() {
 					else
 						cc.push_back(temp[0]);
 					ccc[key_map] = cc[0];
+					temp_erase_map.push_back(key_map);
+					if (x < erase_map[0].size() && k > 1)
+						ccc.erase(erase_map[0][x]);
 					temp_title.erase(temp_title.end() - 2, temp_title.end());
 					int days = 0;
 					bb.clear();
@@ -460,12 +472,14 @@ int main() {
 						}
 					}
 				}
-				ans.clear();
+				if (k > 1)
+					erase_map.erase(erase_map.begin(), erase_map.begin() + 1);
 			}
 		}
 	}
 	show_final.push_back(show);
 	c.clear();
+	split_data_to_month(data, date, dataMonth);
 	for (int m = 0; m < dataMonth.size(); m++)
 	{
 		c = count_one_in_each_column(dataMonth[m], m_ConfigParam.beginKColumn - 3, m_ConfigParam.endKColumn - 3);
@@ -505,8 +519,8 @@ int main() {
 	//time(&end);
 	auto done = std::chrono::high_resolution_clock::now();
 	//float execute_time_min = float(end - start);
-	auto execute_time_second = std::chrono::duration_cast<std::chrono::milliseconds>(done - started).count();
-	std::cout <<"\t\t\t\t" <<"Execution Time: "<< execute_time_second << " millisecond"
+	auto execute_time_second = std::chrono::duration_cast<std::chrono::seconds>(done - started).count();
+	std::cout <<"\t\t\t\t" <<"Execution Time: "<< execute_time_second << " Second"
 		<< std::endl << std::endl;
 	int temp = -1;
 	for (int i = 0; i < show_final.size(); i++)

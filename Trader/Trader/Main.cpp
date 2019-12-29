@@ -67,14 +67,14 @@ bool read_config(std::string config)
 	}
 	return true;
 }
-bool read_from_excel_file(std::string file,int numberOfColumn, std::vector<std::vector<double>>& cell,
+bool read_from_excel_file(std::string file,int numberOfColumn, std::vector<std::vector<float>>& cell,
 	std::vector<std::string>& columnTitle, std::vector<tm>& date)
 {
 	std::string line;
 	std::ifstream infile(file);
 	if (!infile.is_open())
 		return false;
-	std::vector<double> temp_row;
+	std::vector<float> temp_row;
 	std::getline(infile, line, '\n');
 	std::istringstream title(line);
 	std::string buff;
@@ -125,10 +125,10 @@ bool read_from_excel_file(std::string file,int numberOfColumn, std::vector<std::
 	}
 	return true;
 }
-void split_data_to_month(std::vector<std::vector<double>>& data, std::vector<tm> date, std::vector<std::vector<std::vector<double>>>& dataMonth)
+void split_data_to_month(std::vector<std::vector<float>>& data, std::vector<tm> date, std::vector<std::vector<std::vector<float>>>& dataMonth)
 {
 	int last_month = date[0].tm_mon;
-	std::vector<std::vector<double>> temp;
+	std::vector<std::vector<float>> temp;
 	for (int i = 0; i < data.size(); i++)
 	{
 		if (date[i].tm_mon == last_month)
@@ -143,10 +143,10 @@ void split_data_to_month(std::vector<std::vector<double>>& data, std::vector<tm>
 	}
 	dataMonth.push_back(temp);
 }
-std::vector<std::vector<int>> count_one_in_each_column(const std::vector<std::vector<double>>& data, int begin, int end)
+std::vector<std::vector<unsigned short>> count_one_in_each_column(const std::vector<std::vector<float>>& data, int begin, int end)
 {
-	std::vector<int> temp;
-	std::vector<std::vector<int>> data_out;
+	std::vector<unsigned short> temp;
+	std::vector<std::vector<unsigned short>> data_out;
 	for (int i = begin; i <= end; i++)
 	{
 		for (int j = 0; j < data.size(); j++)
@@ -159,8 +159,8 @@ std::vector<std::vector<int>> count_one_in_each_column(const std::vector<std::ve
 	}
 	return data_out;
 }
-std::vector<std::vector<int>> count_if_greater_than_i_for_each_column(const std::vector<std::vector<double>>& data,
-	std::vector<tm>& date ,const std::vector<std::vector<int>>& index_of_data, float factor, int j, int& days)
+std::vector<std::vector<int>> count_if_greater_than_i_for_each_column(const std::vector<std::vector<float>>& data,
+	std::vector<tm>& date ,const std::vector<std::vector<unsigned short>>& index_of_data, float factor, int j, int& days)
 {
 	std::vector<int> temp;
 	temp.clear();
@@ -186,8 +186,8 @@ std::vector<std::vector<int>> count_if_greater_than_i_for_each_column(const std:
 	}
 	return data_out;
 }
-std::vector<std::vector<int>> count_if_greater_than_i_for_each_column(const std::vector<std::vector<double>>& data,
-	const std::vector<std::vector<int>>& index_of_data, float factor, int j)
+std::vector<std::vector<int>> count_if_greater_than_i_for_each_column(const std::vector<std::vector<float>>& data,
+	const std::vector<std::vector<unsigned short>>& index_of_data, float factor, int j)
 {
 	std::vector<int> temp;
 	temp.clear();
@@ -206,11 +206,11 @@ std::vector<std::vector<int>> count_if_greater_than_i_for_each_column(const std:
 	}
 	return data_out;
 }
-std::vector<int> common_elements(const std::vector<std::vector<int>>& index_of_data)
+std::vector<unsigned short> common_elements(const std::vector<std::vector<unsigned short>>& index_of_data)
 {
 	if (index_of_data.size() < 2)
 	{
-		std::vector<int> temp;
+		std::vector<unsigned short> temp;
 		for (int j = 0; j < index_of_data[0].size(); j++)
 			if (index_of_data[0][j] == 1)
 			{
@@ -219,7 +219,7 @@ std::vector<int> common_elements(const std::vector<std::vector<int>>& index_of_d
 		return temp;
 	}
 
-	std::vector<int> out;
+	std::vector<unsigned short> out;
 	int baseIndex = 0;
 	std::vector<int> indices(index_of_data.size() - 1);
 	int totalMatchFound;
@@ -378,8 +378,8 @@ int main() {
 	read_config("Config.txt");
 	SetWindow(200, 3000);
 
-	std::vector<std::vector<double>> data;
-	std::vector<std::vector<std::vector<double>>> dataMonth;
+	std::vector<std::vector<float>> data;
+	std::vector<std::vector<std::vector<float>>> dataMonth;
 	std::vector<std::string> title;
 	std::vector<tm> date;
 	read_from_excel_file(m_ConfigParam.fileName, m_ConfigParam.columnNumber+1, data, title, date);
@@ -389,23 +389,23 @@ int main() {
 	std::vector<int> num_days(m_ConfigParam.maxOutput);
 	std::vector<std::vector<int>> k_store(m_ConfigParam.maxOutput);
 	std::vector<std::string> show_title(m_ConfigParam.maxOutput);
-	std::vector<std::vector<double>> show(m_ConfigParam.maxOutput);
+	std::vector<std::vector<float>> show(m_ConfigParam.maxOutput);
 	for (int j = 0; j < m_ConfigParam.maxOutput; j++)
-		show[j] = std::vector<double>(6);
+		show[j] = std::vector<float>(6);
 
-	std::vector<std::vector<std::vector<double>>> show_final;
+	std::vector<std::vector<std::vector<float>>> show_final;
 
 
 	int numberOfK = (m_ConfigParam.endKColumn - m_ConfigParam.beginKColumn) + 1;
 	int numberOfJ = (m_ConfigParam.endJColumn - m_ConfigParam.beginJColumn) + 1;
-	double temp_max;
-	std::map<std::string, std::vector<int>> ccc;
+	float temp_max;
+	std::map<std::string, std::vector<unsigned short>> ccc;
 	std::vector<std::vector<int>> ans;
-	std::vector<std::vector<int>> cc;
+	std::vector<std::vector<unsigned short>> cc;
 	std::vector<std::vector<int>> bb;
 
-	std::vector<double> maxx(m_ConfigParam.maxOutput,-10);
-	std::vector<std::vector<int>> c;
+	std::vector<float> maxx(m_ConfigParam.maxOutput,-10);
+	std::vector<std::vector<unsigned short>> c;
 
 	c = count_one_in_each_column(data, m_ConfigParam.beginKColumn - 3, m_ConfigParam.endKColumn - 3);
 	for (float i : m_ConfigParam.IValues)
@@ -416,17 +416,17 @@ int main() {
 			{
 				ans = makeCombi(numberOfK, k);
 				for (int x = 0; x < ans.size(); x++) {
-					std::vector<std::vector<int>> temp;
+					std::vector<std::vector<unsigned short>> temp;
 					std::string temp_title = "";
 					std::string key_map;
 					cc.clear();
-					for (int j = 0; j < ans[x].size(); j++) {
-						key_map += std::to_string(ans[x][j]) + "-";
-						if (ans[x].size() - j == 2)
+					for (int p = 0; p < ans[x].size(); p++) {
+						key_map += std::to_string(ans[x][p]) + "-";
+						if (ans[x].size() - p == 2)
 							temp.push_back(ccc[key_map]);
-						if (ans[x].size() - j == 1)
-							temp.push_back(c[ans[x][j] - 1]);
-						temp_title += title[ans[x][j] + m_ConfigParam.beginKColumn - 2] + "--";
+						if (ans[x].size() - p == 1)
+							temp.push_back(c[ans[x][p] - 1]);
+						temp_title += title[ans[x][p] + m_ConfigParam.beginKColumn - 2] + "--";
 					}
 					if (temp.size() > 1)
 						cc.push_back(common_elements(temp));
@@ -435,6 +435,7 @@ int main() {
 					ccc[key_map] = cc[0];
 					temp_title.erase(temp_title.end() - 2, temp_title.end());
 					int days = 0;
+					bb.clear();
 					bb = count_if_greater_than_i_for_each_column(data, date, cc, i, j + 5, days);
 					if (cc.size() == 0 || cc[0].size() < m_ConfigParam.cSmallerThan)
 						continue;
@@ -471,7 +472,7 @@ int main() {
 		for (int s = 0; s < show.size(); s++)
 		{
 			show[s].clear();
-			std::vector<std::vector<int>> temp;
+			std::vector<std::vector<unsigned short>> temp;
 			cc.clear();
 			for (int x = 0; x < k_store[s].size(); x++)
 			{
@@ -503,7 +504,7 @@ int main() {
 	}
 	//time(&end);
 	auto done = std::chrono::high_resolution_clock::now();
-	//double execute_time_min = double(end - start);
+	//float execute_time_min = float(end - start);
 	auto execute_time_second = std::chrono::duration_cast<std::chrono::milliseconds>(done - started).count();
 	std::cout <<"\t\t\t\t" <<"Execution Time: "<< execute_time_second << " millisecond"
 		<< std::endl << std::endl;

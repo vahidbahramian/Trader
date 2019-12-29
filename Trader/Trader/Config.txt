@@ -1,10 +1,10 @@
-File_Name = saeed.txt
-Number_Of_Column = 31
+File_Name = 27.txt
+Number_Of_Column = 41
 Number_Of_Maximum_Output = 20
 Begin_Column_Of_K = 15
-End_Column_Of_K = 31
+End_Column_Of_K = 41
 Begin_Column_Of_J = 8
 End_Column_Of_J = 14
 I_Values = 1.1 1.6 2.1
-Maximum_Combination = 17
-C_Smaller_Than = 20
+Maximum_Combination = 27
+C_Smaller_Than = 1

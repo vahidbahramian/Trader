@@ -16,6 +16,25 @@
 #include <windows.h>
 #include <map>
 
+template <class Key, class Value>
+unsigned long mapCapacity(const std::map<Key, Value>& map) {
+	unsigned long cap = sizeof(map);
+	for (typename std::map<Key, Value>::const_iterator it = map.begin(); it != map.end(); ++it) {
+		cap += it->first.capacity();
+		cap += it->second.capacity();
+	}
+	return cap;
+}
+
+template <class Value>
+unsigned long vectorCapacity(const std::vector<Value>& vector) {
+	unsigned long cap = sizeof(vector);
+	for (int i = 0; i < vector.size(); i++) {
+		cap += vector.capacity();
+	}
+	return cap;
+}
+
 struct ConfigParam
 {
 	std::string fileName;
@@ -326,8 +345,8 @@ void PermGenerator(int n, int k)
 		}
 	} while (next_permutation(d.begin(), d.end()));
 }
-void makeCombiUtil(std::vector<std::vector<int> >& ans,
-	std::vector<int>& tmp, int n, int left, int k)
+void makeCombiUtil(std::vector<std::vector<byte> >& ans,
+	std::vector<byte>& tmp, int n, int left, int k)
 {
 	// Pushing this vector to a vector of vector 
 	if (k == 0) {
@@ -350,10 +369,10 @@ void makeCombiUtil(std::vector<std::vector<int> >& ans,
 
 // Prints all combinations of size k of numbers 
 // from 1 to n. 
-std::vector<std::vector<int> > makeCombi(int n, int k)
+std::vector<std::vector<byte> > makeCombi(int n, int k)
 {
-	std::vector<std::vector<int> > ans;
-	std::vector<int> tmp;
+	std::vector<std::vector<byte> > ans;
+	std::vector<byte> tmp;
 	makeCombiUtil(ans, tmp, n, 1, k);
 	return ans;
 }
@@ -399,15 +418,16 @@ int main() {
 	int numberOfJ = (m_ConfigParam.endJColumn - m_ConfigParam.beginJColumn) + 1;
 	float temp_max;
 	std::map<std::string, std::vector<unsigned short>> ccc;
-	std::vector<std::vector<int>> ans;
+	std::vector<std::vector<byte>> ans;
 	std::vector<std::vector<unsigned short>> cc;
 	std::vector<std::vector<int>> bb;
 
 	std::vector<float> maxx(m_ConfigParam.maxOutput,-10);
 	std::vector<std::vector<unsigned short>> c;
 
-	std::vector<std::vector<std::string>> erase_map;
-	std::vector<std::string> temp_erase_map(1,"");
+	//std::vector<std::vector<std::string>> erase_map;
+	//std::vector<std::string> temp_erase_map(1,"");
+	
 
 	c = count_one_in_each_column(data, m_ConfigParam.beginKColumn - 3, m_ConfigParam.endKColumn - 3);
 	for (float i : m_ConfigParam.IValues)
@@ -416,8 +436,8 @@ int main() {
 		{
 			for (int k = 1; k <= m_ConfigParam.combination; k++)
 			{
-				erase_map.push_back(temp_erase_map);
-				temp_erase_map.clear();
+				//erase_map.push_back(temp_erase_map);
+				//temp_erase_map.clear();
 				ans.clear();
 				ans = makeCombi(numberOfK, k);
 				for (int x = 0; x < ans.size(); x++) {
@@ -426,11 +446,7 @@ int main() {
 					std::string key_map = "";
 					cc.clear();
 					for (int p = 0; p < ans[x].size(); p++) {
-						if (ans[x][p] < 10)
-							key_map += std::to_string(ans[x][p]) + "-";
-						else
-							key_map += std::to_string(ans[x][p]) + "-";
-						
+						key_map += std::to_string(ans[x][p]) + "-";
 						if (ans[x].size() - p == 2)
 							temp.push_back(ccc[key_map]);
 						if (ans[x].size() - p == 1)
@@ -442,9 +458,9 @@ int main() {
 					else
 						cc.push_back(temp[0]);
 					ccc[key_map] = cc[0];
-					temp_erase_map.push_back(key_map);
-					if (x < erase_map[0].size() && k > 1)
-						ccc.erase(erase_map[0][x]);
+					//temp_erase_map.push_back(key_map);
+					//if (x < erase_map[0].size() && k > 1)
+						//ccc.erase(erase_map[0][x]);
 					temp_title.erase(temp_title.end() - 2, temp_title.end());
 					int days = 0;
 					bb.clear();
@@ -472,9 +488,12 @@ int main() {
 						}
 					}
 				}
-				if (k > 1)
-					erase_map.erase(erase_map.begin(), erase_map.begin() + 1);
+				//std::cout << k << "\t" << ans.size() << "\t" << ccc.size() << "\n";
+				//if (k > 1)
+					//erase_map.erase(erase_map.begin(), erase_map.begin() + 1);
 			}
+			//ccc.clear();
+			//erase_map.clear();
 		}
 	}
 	show_final.push_back(show);

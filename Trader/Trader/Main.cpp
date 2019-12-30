@@ -418,7 +418,7 @@ int main() {
 	int numberOfJ = (m_ConfigParam.endJColumn - m_ConfigParam.beginJColumn) + 1;
 	float temp_max;
 	std::map<std::string, std::vector<unsigned short>> ccc;
-	std::vector<std::vector<byte>> ans;
+	std::vector<std::vector<std::vector<byte>>> ans;
 	std::vector<std::vector<unsigned short>> cc;
 	std::vector<std::vector<int>> bb;
 
@@ -427,7 +427,12 @@ int main() {
 
 	//std::vector<std::vector<std::string>> erase_map;
 	//std::vector<std::string> temp_erase_map(1,"");
-	
+	int time = 0;
+
+	for (int k = 1; k <= m_ConfigParam.combination; k++)
+	{
+		ans.push_back(makeCombi(numberOfK, k));
+	}
 
 	c = count_one_in_each_column(data, m_ConfigParam.beginKColumn - 3, m_ConfigParam.endKColumn - 3);
 	for (float i : m_ConfigParam.IValues)
@@ -438,26 +443,40 @@ int main() {
 			{
 				//erase_map.push_back(temp_erase_map);
 				//temp_erase_map.clear();
-				ans.clear();
-				ans = makeCombi(numberOfK, k);
-				for (int x = 0; x < ans.size(); x++) {
+				//ans.clear();
+				//ans = makeCombi(numberOfK, k);
+				int count = 0;
+				for (int x = 0; x < ans[k-1].size(); x++) {
 					std::vector<std::vector<unsigned short>> temp;
 					std::string temp_title = "";
 					std::string key_map = "";
 					cc.clear();
-					for (int p = 0; p < ans[x].size(); p++) {
-						key_map += std::to_string(ans[x][p]) + "-";
-						if (ans[x].size() - p == 2)
-							temp.push_back(ccc[key_map]);
-						if (ans[x].size() - p == 1)
-							temp.push_back(c[ans[x][p] - 1]);
-						temp_title += title[ans[x][p] + m_ConfigParam.beginKColumn - 2] + "--";
+					for (int p = 0; p < ans[k - 1][x].size(); p++) {
+						key_map += std::to_string(ans[k - 1][x][p]) + "-";
+						temp_title += title[ans[k - 1][x][p] + m_ConfigParam.beginKColumn - 2] + "--";
+						if (ans[k - 1][x].size() - p == 2)
+						{
+							if (ccc.find(key_map) != ccc.end())
+								temp.push_back(ccc[key_map]);
+							else
+								break;
+						}
+						if (ans[k - 1][x].size() - p == 1)
+							temp.push_back(c[ans[k - 1][x][p] - 1]);
+
 					}
 					if (temp.size() > 1)
 						cc.push_back(common_elements(temp));
-					else
+					else if (temp.size() == 1)
 						cc.push_back(temp[0]);
-					ccc[key_map] = cc[0];
+
+					if (cc.size() != 0)
+						if (cc[0].size() != 0)
+							ccc[key_map] = cc[0];
+						else
+							count++;
+					else
+						count++;
 					//temp_erase_map.push_back(key_map);
 					//if (x < erase_map[0].size() && k > 1)
 						//ccc.erase(erase_map[0][x]);
@@ -479,9 +498,9 @@ int main() {
 							show[l][4] = i;
 							show[l][5] = maxx[l] * 100;
 							k_store[l].clear();
-							for (int a = 0; a < ans[x].size(); a++)
+							for (int a = 0; a < ans[k - 1][x].size(); a++)
 							{
-								k_store[l].push_back(ans[x][a] - 1);
+								k_store[l].push_back(ans[k - 1][x][a] - 1);
 							}
 							num_days[l] = days;
 							break;
@@ -489,10 +508,12 @@ int main() {
 					}
 				}
 				//std::cout << k << "\t" << ans.size() << "\t" << ccc.size() << "\n";
+				if (count == ans[k - 1].size())
+					break;
 				//if (k > 1)
 					//erase_map.erase(erase_map.begin(), erase_map.begin() + 1);
 			}
-			//ccc.clear();
+			ccc.clear();
 			//erase_map.clear();
 		}
 	}
@@ -538,9 +559,55 @@ int main() {
 	//time(&end);
 	auto done = std::chrono::high_resolution_clock::now();
 	//float execute_time_min = float(end - start);
-	auto execute_time_second = std::chrono::duration_cast<std::chrono::seconds>(done - started).count();
-	std::cout <<"\t\t\t\t" <<"Execution Time: "<< execute_time_second << " Second"
+	auto execute_time_second = std::chrono::duration_cast<std::chrono::milliseconds>(done - started).count();
+	std::cout <<"\t\t\t\t" <<"Execution Time: "<< execute_time_second << " milliseconds"
 		<< std::endl << std::endl;
+
+	std::ofstream outfile;
+	outfile.open("Output.txt", std::ios::out | std::ios::trunc);
+	if (outfile.is_open())
+	{
+		int temp = -1;
+		for (int i = 0; i < show_final.size(); i++)
+		{
+			if (i == 0)
+				outfile << "\t\t\t\t" << "Overall" << "\n";
+			else
+			{
+				outfile << "\t\t\t\t" << date[dataMonth[i - 1].size() + temp].tm_mon << "/" << date[dataMonth[i - 1].size() + temp].tm_year << "\n";
+				temp += dataMonth[i - 1].size() - 1;
+			}
+
+			for (int j = 0; j < show_final[i].size(); j++)
+			{
+				//std::cout.width(100);
+				//std::cout.setf(std::ios::left, std::ios::adjustfield);
+				if (show_final[i][j].size() != 0)
+				{
+					outfile << show_title[j] << "\t";
+					for (int k = 0; k < show_final[i][j].size(); k++)
+					{
+						if (i == 0 && k == 5)
+							outfile << num_days[j] << "\t";
+						if (i == 0 && k == 5)
+							outfile << inMonth[j] << "\t";
+						if (k == 2 || k == 5)
+							outfile << std::fixed << std::setprecision(1) << show_final[i][j][k] << "%";
+						else if (k == 4)
+							outfile << std::fixed << std::setprecision(1) << show_final[i][j][k];
+						else
+							outfile << std::noshowpoint << std::setprecision(0) << show_final[i][j][k];
+						outfile << "\t";
+					}
+					outfile << std::endl;
+				}
+
+			}
+			outfile << "\n\n";
+		}
+	}
+	outfile.close();
+
 	int temp = -1;
 	for (int i = 0; i < show_final.size(); i++)
 	{
@@ -548,8 +615,8 @@ int main() {
 			std::cout << "\t\t\t\t" << "Overall" << "\n";
 		else
 		{
-			std::cout << "\t\t\t\t" << date[dataMonth[i-1].size() + temp].tm_mon << "/" << date[dataMonth[i-1].size() + temp].tm_year << "\n";
-			temp += dataMonth[i-1].size() - 1;
+			std::cout << "\t\t\t\t" << date[dataMonth[i - 1].size() + temp].tm_mon << "/" << date[dataMonth[i - 1].size() + temp].tm_year << "\n";
+			temp += dataMonth[i - 1].size() - 1;
 		}
 
 		for (int j = 0; j < show_final[i].size(); j++)
@@ -569,7 +636,7 @@ int main() {
 						std::cout << std::fixed << std::setprecision(1) << show_final[i][j][k] << "%";
 					else if (k == 4)
 						std::cout << std::fixed << std::setprecision(1) << show_final[i][j][k];
-					else 
+					else
 						std::cout << std::noshowpoint << std::setprecision(0) << show_final[i][j][k];
 					std::cout << "\t";
 				}

@@ -564,6 +564,8 @@ int main() {
 			}
 
 				//std::cout << k << "\t" << ans.size() << "\t" << ccc.size() << "\n";
+				if (count == ans[k - 1].size())
+					break;
 				//if (k > 1)
 					//erase_map.erase(erase_map.begin(), erase_map.begin() + 1);
 			//ccc.clear();

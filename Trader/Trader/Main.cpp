@@ -34,7 +34,6 @@ unsigned long vectorCapacity(const std::vector<Value>& vector) {
 	}
 	return cap;
 }
-
 struct ConfigParam
 {
 	std::string fileName;
@@ -409,16 +408,15 @@ int main() {
 	std::vector<std::string> show_title(m_ConfigParam.maxOutput);
 	std::vector<std::vector<float>> show(m_ConfigParam.maxOutput);
 	for (int j = 0; j < m_ConfigParam.maxOutput; j++)
-		show[j] = std::vector<float>(6);
+		show[j] = std::vector<float>(6,-1000);
 
 	std::vector<std::vector<std::vector<float>>> show_final;
 
 
 	int numberOfK = (m_ConfigParam.endKColumn - m_ConfigParam.beginKColumn) + 1;
 	int numberOfJ = (m_ConfigParam.endJColumn - m_ConfigParam.beginJColumn) + 1;
-	float temp_max;
-	std::map<std::string, std::vector<unsigned short>> ccc;
-	std::vector<std::vector<byte>> ans;
+	std::map<std::string, std::pair<std::vector<unsigned short>,std::vector<byte>>> ccc;
+	std::vector<std::vector<std::vector<byte>>> ans;
 	std::vector<std::vector<unsigned short>> cc;
 	std::vector<std::vector<int>> bb;
 
@@ -427,73 +425,153 @@ int main() {
 
 	//std::vector<std::vector<std::string>> erase_map;
 	//std::vector<std::string> temp_erase_map(1,"");
-	
+	int time = 0;
+
+	for (int k = 1; k <= m_ConfigParam.combination; k++)
+	{
+		ans.push_back(makeCombi(numberOfK, k));
+	}
 
 	c = count_one_in_each_column(data, m_ConfigParam.beginKColumn - 3, m_ConfigParam.endKColumn - 3);
 	for (float i : m_ConfigParam.IValues)
 	{
 		for (int j = 0; j < numberOfJ; j++)
 		{
-			for (int k = 1; k <= m_ConfigParam.combination; k++)
+			if (j == 0 && i == m_ConfigParam.IValues[0])
 			{
-				//erase_map.push_back(temp_erase_map);
-				//temp_erase_map.clear();
-				ans.clear();
-				ans = makeCombi(numberOfK, k);
-				for (int x = 0; x < ans.size(); x++) {
-					std::vector<std::vector<unsigned short>> temp;
-					std::string temp_title = "";
-					std::string key_map = "";
-					cc.clear();
-					for (int p = 0; p < ans[x].size(); p++) {
-						key_map += std::to_string(ans[x][p]) + "-";
-						if (ans[x].size() - p == 2)
-							temp.push_back(ccc[key_map]);
-						if (ans[x].size() - p == 1)
-							temp.push_back(c[ans[x][p] - 1]);
-						temp_title += title[ans[x][p] + m_ConfigParam.beginKColumn - 2] + "--";
+				auto started = std::chrono::high_resolution_clock::now();
+				for (int k = 1; k <= m_ConfigParam.combination; k++)
+				{
+					//erase_map.push_back(temp_erase_map);
+					//temp_erase_map.clear();
+					//ans.clear();
+					//ans = makeCombi(numberOfK, k);
+					int count = 0;
+					for (int x = 0; x < ans[k - 1].size(); x++) {
+						std::vector<std::vector<unsigned short>> temp;
+						std::string temp_title = "";
+						//std::string key_map = "";
+						cc.clear();
+						for (int p = 0; p < ans[k - 1][x].size(); p++) {
+							//key_map += std::to_string(ans[k - 1][x][p]) + "-";
+							temp_title += title[ans[k - 1][x][p] + m_ConfigParam.beginKColumn - 2] + "--";
+							if (ans[k - 1][x].size() - p == 2)
+							{
+								if (ccc.find(temp_title) != ccc.end())
+									temp.push_back(ccc[temp_title].first);
+								else
+									break;
+							}
+							if (ans[k - 1][x].size() - p == 1)
+								temp.push_back(c[ans[k - 1][x][p] - 1]);
+						}
+						if (temp.size() > 1)
+							cc.push_back(common_elements(temp));
+						else if (temp.size() == 1)
+							cc.push_back(temp[0]);
+
+						if (cc.size() != 0)
+							if (cc[0].size() != 0)
+							{
+								std::vector<byte> t;
+								t.push_back(k);
+								t.push_back(x);
+								ccc[temp_title] = std::make_pair(cc[0], t);
+							}
+							else
+								count++;
+						else
+							count++;
+
+						//temp_erase_map.push_back(key_map);
+						//if (x < erase_map[0].size() && k > 1)
+							//ccc.erase(erase_map[0][x]);
+						//temp_title.erase(temp_title.end() - 2, temp_title.end());
+						int days = 0;
+						bb.clear();
+						bb = count_if_greater_than_i_for_each_column(data, date, cc, i, j + 5, days);
+						if (cc.size() == 0 || cc[0].size() < m_ConfigParam.cSmallerThan)
+							continue;
+						auto max = (float)cc[0].size() * (i * 0.02 * ((float)bb[0].size() / (float)cc[0].size())) - (float)cc[0].size() * (0.02 * (1 - ((float)bb[0].size() / (float)cc[0].size())));
+						for (int l = 0; l < show.size(); l++) {
+							if (max * 100 > show[l][5]) {
+								std::vector<float> showParam;
+								show.erase(show.end() - 1, show.end());
+								showParam.push_back(cc[0].size());
+								showParam.push_back(bb[0].size());
+								showParam.push_back(((float)bb[0].size() / (float)cc[0].size()) * 100);
+								showParam.push_back(j + 5);
+								showParam.push_back(i);
+								showParam.push_back(max * 100);
+								show.insert(show.begin() + l, showParam);
+
+								show_title.erase(show_title.end() - 1, show_title.end());
+								show_title.insert(show_title.begin() + l, temp_title);
+
+								num_days.erase(num_days.end() - 1, num_days.end());
+								num_days.insert(num_days.begin() + l, days);
+
+								k_store.erase(k_store.end() - 1, k_store.end());
+								std::vector<int> t;
+								for (int a = 0; a < ans[k - 1][x].size(); a++)
+								{
+									t.push_back(ans[k - 1][x][a] - 1);
+								}
+								k_store.insert(k_store.begin() + l, t);
+								break;
+							}
+						}
 					}
-					if (temp.size() > 1)
-						cc.push_back(common_elements(temp));
-					else
-						cc.push_back(temp[0]);
-					ccc[key_map] = cc[0];
-					//temp_erase_map.push_back(key_map);
-					//if (x < erase_map[0].size() && k > 1)
-						//ccc.erase(erase_map[0][x]);
-					temp_title.erase(temp_title.end() - 2, temp_title.end());
+					if (count == ans[k - 1].size())
+						break;
+				}
+			}
+			else
+			{
+				std::string temp_title = "";
+				for (auto x : ccc)
+				{
+					cc.clear();
+					temp_title = x.first;
+					cc.push_back(x.second.first);
 					int days = 0;
 					bb.clear();
 					bb = count_if_greater_than_i_for_each_column(data, date, cc, i, j + 5, days);
 					if (cc.size() == 0 || cc[0].size() < m_ConfigParam.cSmallerThan)
 						continue;
-					temp_max = (float)cc[0].size() * (i * 0.02 * ((float)bb[0].size() / (float)cc[0].size())) - (float)cc[0].size() * (0.02 * (1 - ((float)bb[0].size() / (float)cc[0].size())));
+					auto max = (float)cc[0].size() * (i * 0.02 * ((float)bb[0].size() / (float)cc[0].size())) - (float)cc[0].size() * (0.02 * (1 - ((float)bb[0].size() / (float)cc[0].size())));
 					for (int l = 0; l < show.size(); l++) {
-						if (temp_max > maxx[l]) {
-							maxx[l] = temp_max;
-							show_title[l] = temp_title;
-							show[l][0] = cc[0].size();
-							show[l][1] = bb[0].size();
-							show[l][2] = ((float)bb[0].size() / (float)cc[0].size()) * 100;
-							show[l][3] = j + 5;
-							show[l][4] = i;
-							show[l][5] = maxx[l] * 100;
-							k_store[l].clear();
-							for (int a = 0; a < ans[x].size(); a++)
-							{
-								k_store[l].push_back(ans[x][a] - 1);
-							}
-							num_days[l] = days;
+						if (max * 100 > show[l][5]) {
+							std::vector<float> showParam;
+							show.erase(show.end() - 1, show.end());
+							showParam.push_back(cc[0].size());
+							showParam.push_back(bb[0].size());
+							showParam.push_back(((float)bb[0].size() / (float)cc[0].size()) * 100);
+							showParam.push_back(j + 5);
+							showParam.push_back(i);
+							showParam.push_back(max * 100);
+							show.insert(show.begin() + l, showParam);
+
+							show_title.erase(show_title.end() - 1, show_title.end());
+							show_title.insert(show_title.begin() + l, temp_title);
+
+							num_days.erase(num_days.end() - 1, num_days.end());
+							num_days.insert(num_days.begin() + l, days);
 							break;
 						}
 					}
 				}
+			}
+
 				//std::cout << k << "\t" << ans.size() << "\t" << ccc.size() << "\n";
 				//if (k > 1)
 					//erase_map.erase(erase_map.begin(), erase_map.begin() + 1);
-			}
 			//ccc.clear();
 			//erase_map.clear();
+			auto done = std::chrono::high_resolution_clock::now();
+			//float execute_time_min = float(end - start);
+			auto execute_time_second = std::chrono::duration_cast<std::chrono::milliseconds>(done - started).count();
+			std::cout <<"Execution Time: " << execute_time_second << " milliseconds"<< std::endl;
 		}
 	}
 	show_final.push_back(show);
@@ -507,14 +585,16 @@ int main() {
 			show[s].clear();
 			std::vector<std::vector<unsigned short>> temp;
 			cc.clear();
-			for (int x = 0; x < k_store[s].size(); x++)
+
+			auto a = ccc[show_title[s]];
+			for (int x = 0; x < a.second.size(); x++)
 			{
-				temp.push_back(c[k_store[s][x]]);
+				temp.push_back(a.second[x]);
 			}
 			if (temp.size() > 1)
 				cc.push_back(common_elements(temp));
 			else
-				cc.push_back(temp[0]);
+				cc.push_back(			ccc[show_title]);
 			float i = show_final[0][s][4];
 			int j = show_final[0][s][3];
 			bb = count_if_greater_than_i_for_each_column(dataMonth[m], cc, i, j);
@@ -522,25 +602,70 @@ int main() {
 				show[s].clear();
 			else
 			{
-				temp_max = (float)cc[0].size() * (i * 0.02 * ((float)bb[0].size() / (float)cc[0].size())) - (float)cc[0].size() * (0.02 * (1 - ((float)bb[0].size() / (float)cc[0].size())));
+				auto max = (float)cc[0].size() * (i * 0.02 * ((float)bb[0].size() / (float)cc[0].size())) - (float)cc[0].size() * (0.02 * (1 - ((float)bb[0].size() / (float)cc[0].size())));
 				show[s].push_back(cc[0].size());
 				show[s].push_back(bb[0].size());
 				show[s].push_back(((float)bb[0].size() / (float)cc[0].size()) * 100);
 				show[s].push_back(j);
 				show[s].push_back(i);
-				show[s].push_back(temp_max * 100);
+				show[s].push_back(max * 100);
 				inMonth[s]++;
 			}
-
 		}
 		show_final.push_back(show);
 	}
 	//time(&end);
 	auto done = std::chrono::high_resolution_clock::now();
 	//float execute_time_min = float(end - start);
-	auto execute_time_second = std::chrono::duration_cast<std::chrono::seconds>(done - started).count();
-	std::cout <<"\t\t\t\t" <<"Execution Time: "<< execute_time_second << " Second"
+	auto execute_time_second = std::chrono::duration_cast<std::chrono::milliseconds>(done - started).count();
+	std::cout <<"\t\t\t\t" <<"Execution Time: "<< execute_time_second << " milliseconds"
 		<< std::endl << std::endl;
+
+	std::ofstream outfile;
+	outfile.open("Output.txt", std::ios::out | std::ios::trunc);
+	if (outfile.is_open())
+	{
+		int temp = -1;
+		for (int i = 0; i < show_final.size(); i++)
+		{
+			if (i == 0)
+				outfile << "\t\t\t\t" << "Overall" << "\n";
+			else
+			{
+				outfile << "\t\t\t\t" << date[dataMonth[i - 1].size() + temp].tm_mon << "/" << date[dataMonth[i - 1].size() + temp].tm_year << "\n";
+				temp += dataMonth[i - 1].size() - 1;
+			}
+
+			for (int j = 0; j < show_final[i].size(); j++)
+			{
+				//std::cout.width(100);
+				//std::cout.setf(std::ios::left, std::ios::adjustfield);
+				if (show_final[i][j].size() != 0)
+				{
+					outfile << show_title[j] << "\t";
+					for (int k = 0; k < show_final[i][j].size(); k++)
+					{
+						if (i == 0 && k == 5)
+							outfile << num_days[j] << "\t";
+						if (i == 0 && k == 5)
+							outfile << inMonth[j] << "\t";
+						if (k == 2 || k == 5)
+							outfile << std::fixed << std::setprecision(1) << show_final[i][j][k] << "%";
+						else if (k == 4)
+							outfile << std::fixed << std::setprecision(1) << show_final[i][j][k];
+						else
+							outfile << std::noshowpoint << std::setprecision(0) << show_final[i][j][k];
+						outfile << "\t";
+					}
+					outfile << std::endl;
+				}
+
+			}
+			outfile << "\n\n";
+		}
+	}
+	outfile.close();
+
 	int temp = -1;
 	for (int i = 0; i < show_final.size(); i++)
 	{
@@ -548,8 +673,8 @@ int main() {
 			std::cout << "\t\t\t\t" << "Overall" << "\n";
 		else
 		{
-			std::cout << "\t\t\t\t" << date[dataMonth[i-1].size() + temp].tm_mon << "/" << date[dataMonth[i-1].size() + temp].tm_year << "\n";
-			temp += dataMonth[i-1].size() - 1;
+			std::cout << "\t\t\t\t" << date[dataMonth[i - 1].size() + temp].tm_mon << "/" << date[dataMonth[i - 1].size() + temp].tm_year << "\n";
+			temp += dataMonth[i - 1].size() - 1;
 		}
 
 		for (int j = 0; j < show_final[i].size(); j++)
@@ -569,7 +694,7 @@ int main() {
 						std::cout << std::fixed << std::setprecision(1) << show_final[i][j][k] << "%";
 					else if (k == 4)
 						std::cout << std::fixed << std::setprecision(1) << show_final[i][j][k];
-					else 
+					else
 						std::cout << std::noshowpoint << std::setprecision(0) << show_final[i][j][k];
 					std::cout << "\t";
 				}

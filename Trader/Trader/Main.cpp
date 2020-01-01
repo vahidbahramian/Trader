@@ -392,9 +392,17 @@ void SetWindow(int Width, int Height)
 	SetConsoleWindowInfo(Handle, TRUE, &Rect);            // Set Window Size 
 }
 int main() {
-	//auto started = std::chrono::high_resolution_clock::now();
+	auto Start = std::chrono::high_resolution_clock::now();
+	auto started = std::chrono::high_resolution_clock::now();
 	read_config("Config.txt");
+
+	auto done = std::chrono::high_resolution_clock::now();
+	auto execute_time_second = std::chrono::duration_cast<std::chrono::milliseconds>(done - started).count();
+	std::cout <<"Read Config Time: " << execute_time_second << " milliseconds"<< std::endl;
+
 	SetWindow(200, 3000);
+
+	started = std::chrono::high_resolution_clock::now();
 
 	std::vector<std::vector<float>> data;
 	std::vector<std::vector<std::vector<float>>> dataMonth;
@@ -402,8 +410,12 @@ int main() {
 	std::vector<tm> date;
 	read_from_excel_file(m_ConfigParam.fileName, m_ConfigParam.columnNumber + 1, data, title, date);
 
+	done = std::chrono::high_resolution_clock::now();
+	execute_time_second = std::chrono::duration_cast<std::chrono::milliseconds>(done - started).count();
+	std::cout << "Read Input Time: " << execute_time_second << " milliseconds" << std::endl;
 
-	auto started = std::chrono::high_resolution_clock::now();
+
+	started = std::chrono::high_resolution_clock::now();
 
 	std::vector<int> inMonth(m_ConfigParam.maxOutput,0);
 	std::vector<int> num_days(m_ConfigParam.maxOutput);
@@ -422,7 +434,6 @@ int main() {
 	std::vector<std::vector<unsigned short>> cc;
 	std::vector<std::vector<int>> bb;
 
-	std::vector<float> maxx(m_ConfigParam.maxOutput,-10);
 	std::vector<std::vector<unsigned short>> c;
 
 	//std::vector<std::vector<std::string>> erase_map;
@@ -484,10 +495,7 @@ int main() {
 						else
 							count++;
 
-						//temp_erase_map.push_back(key_map);
-						//if (x < erase_map[0].size() && k > 1)
-							//ccc.erase(erase_map[0][x]);
-						//temp_title.erase(temp_title.end() - 2, temp_title.end());
+						t.clear();
 						int days = 0;
 						bb.clear();
 						bb = count_if_greater_than_i_for_each_column(data, date, cc, i, j + 5, days);
@@ -505,6 +513,7 @@ int main() {
 								showParam.push_back(i);
 								showParam.push_back(max * 100);
 								show.insert(show.begin() + l, showParam);
+								showParam.clear();
 
 								show_title.erase(show_title.end() - 1, show_title.end());
 								show_title.insert(show_title.begin() + l, temp_title);
@@ -555,23 +564,14 @@ int main() {
 					}
 				}
 			}
-
-				//std::cout << k << "\t" << ans.size() << "\t" << ccc.size() << "\n";
-				//if (k > 1)
-					//erase_map.erase(erase_map.begin(), erase_map.begin() + 1);
-			//ccc.clear();
-			//erase_map.clear();
-			//auto done = std::chrono::high_resolution_clock::now();
-			////float execute_time_min = float(end - start);
-			//auto execute_time_second = std::chrono::duration_cast<std::chrono::milliseconds>(done - started).count();
-			//std::cout <<"Execution Time: " << execute_time_second << " milliseconds"<< std::endl;
 		}
 	}
-	auto done = std::chrono::high_resolution_clock::now();
-	//float execute_time_min = float(end - start);
-	auto execute_time_second = std::chrono::duration_cast<std::chrono::milliseconds>(done - started).count();
-	std::cout << "\t\t\t\t" << "Execution Time: " << execute_time_second << " milliseconds"
-		<< std::endl << std::endl;
+	done = std::chrono::high_resolution_clock::now();
+	execute_time_second = std::chrono::duration_cast<std::chrono::milliseconds>(done - started).count();
+	std::cout << "Algorithm Execution Time: " << execute_time_second << " milliseconds"
+		<< std::endl;
+
+	started = std::chrono::high_resolution_clock::now();
 
 	show_final.push_back(show);
 	c.clear();
@@ -613,12 +613,16 @@ int main() {
 		}
 		show_final.push_back(show);
 	}
-	//time(&end);
-	//auto done = std::chrono::high_resolution_clock::now();
-	////float execute_time_min = float(end - start);
-	//auto execute_time_second = std::chrono::duration_cast<std::chrono::milliseconds>(done - started).count();
-	//std::cout <<"\t\t\t\t" <<"Execution Time: "<< execute_time_second << " milliseconds"
-	//	<< std::endl << std::endl;
+	done = std::chrono::high_resolution_clock::now();
+	execute_time_second = std::chrono::duration_cast<std::chrono::milliseconds>(done - started).count();
+	std::cout <<"Split in Month Time: "<< execute_time_second << " milliseconds"
+		<< std::endl;
+
+
+	auto End = std::chrono::high_resolution_clock::now();
+	execute_time_second = std::chrono::duration_cast<std::chrono::milliseconds>(End - Start).count();
+	std::cout << "Overall Execution Time: " << execute_time_second << " milliseconds"
+		<< std::endl << std::endl;
 
 	std::ofstream outfile;
 	outfile.open("Output.txt", std::ios::out | std::ios::trunc);

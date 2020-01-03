@@ -15,6 +15,34 @@
 #include <iterator>
 #include <windows.h>
 #include <map>
+#include <mutex>
+
+struct ConfigParam
+{
+	std::string fileName;
+	int columnNumber;
+	int maxOutput;
+	int beginKColumn;
+	int endKColumn;
+	int beginJColumn;
+	int endJColumn;
+	std::vector<float> IValues;
+	int combination;
+	int cSmallerThan;
+
+}m_ConfigParam;
+std::mutex mtx;
+std::vector<std::vector<float>> data;
+std::vector<std::vector<std::vector<float>>> dataMonth;
+std::vector<std::string> title;
+std::vector<tm> date;
+
+std::vector<std::vector<std::vector<float>>> show_final;
+
+std::map<std::string, std::pair<std::vector<unsigned short>, std::vector<byte>>> ccc;
+std::vector<std::vector<byte>> ans;
+
+std::vector<std::vector<unsigned short>> c;
 
 template <class Key, class Value>
 unsigned long mapCapacity(const std::map<Key, Value>& map) {
@@ -34,20 +62,6 @@ unsigned long vectorCapacity(const std::vector<Value>& vector) {
 	}
 	return cap;
 }
-struct ConfigParam
-{
-	std::string fileName;
-	int columnNumber;
-	int maxOutput;
-	int beginKColumn;
-	int endKColumn;
-	int beginJColumn;
-	int endJColumn;
-	std::vector<float> IValues;
-	int combination;
-	int cSmallerThan;
-
-}m_ConfigParam;
 bool read_config(std::string config)
 {
 	std::string line;
@@ -391,6 +405,134 @@ void SetWindow(int Width, int Height)
 	SetConsoleScreenBufferSize(Handle, coord);            // Set Buffer Size 
 	SetConsoleWindowInfo(Handle, TRUE, &Rect);            // Set Window Size 
 }
+
+void first_iteration_calculate(std::vector<std::vector<float>>& show, std::vector<std::string>& show_title, std::vector<int>& num_days,
+	float i, int j)
+{
+	std::vector<std::vector<unsigned short>> cc;
+	std::vector<std::vector<int>> bb;
+	for (int k = 1; k <= m_ConfigParam.combination; k++)
+	{
+		ans = makeCombi(m_ConfigParam.combination, k);
+		std::cout << "k = " << k << "\t" << "ans size = " << ans.size() << "\n";
+		int count = 0;
+		for (int x = 0; x < ans.size(); x++) {
+			std::vector<std::vector<unsigned short>> temp;
+			std::string temp_title = "";
+			cc.clear();
+			std::vector<byte> t;
+			for (int p = 0; p < ans[x].size(); p++) {
+				temp_title += title[ans[x][p] + m_ConfigParam.beginKColumn - 2] + "--";
+				if (ans[x].size() - p == 2)
+				{
+					if (ccc.find(temp_title) != ccc.end())
+						temp.push_back(ccc[temp_title].first);
+					else
+						break;
+				}
+				if (ans[x].size() - p == 1)
+					temp.push_back(c[ans[x][p] - 1]);
+				t.push_back(ans[x][p]);
+			}
+			if (temp.size() > 1)
+				cc.push_back(common_elements(temp));
+			else if (temp.size() == 1)
+				cc.push_back(temp[0]);
+
+			if (cc.size() != 0)
+				if (cc[0].size() >= m_ConfigParam.cSmallerThan)
+				{
+					ccc[temp_title] = std::make_pair(cc[0], t);
+				}
+				else
+					count++;
+			else
+				count++;
+
+			ans[x].clear();
+			ans[x].shrink_to_fit();
+			t.clear();
+			int days = 0;
+			bb.clear();
+			bb = count_if_greater_than_i_for_each_column(data, date, cc, i, j + 5, days);
+			if (cc.size() == 0 || cc[0].size() < m_ConfigParam.cSmallerThan)
+				continue;
+			auto max = (float)cc[0].size() * (i * 0.02 * ((float)bb[0].size() / (float)cc[0].size())) - (float)cc[0].size() * (0.02 * (1 - ((float)bb[0].size() / (float)cc[0].size())));
+			for (int l = 0; l < show.size(); l++) {
+				if (max * 100 > show[l][5]) {
+					std::vector<float> showParam;
+					show.erase(show.end() - 1, show.end());
+					showParam.push_back(cc[0].size());
+					showParam.push_back(bb[0].size());
+					showParam.push_back(((float)bb[0].size() / (float)cc[0].size()) * 100);
+					showParam.push_back(j + 5);
+					showParam.push_back(i);
+					showParam.push_back(max * 100);
+					show.insert(show.begin() + l, showParam);
+					showParam.clear();
+
+					show_title.erase(show_title.end() - 1, show_title.end());
+					show_title.insert(show_title.begin() + l, temp_title);
+
+					num_days.erase(num_days.end() - 1, num_days.end());
+					num_days.insert(num_days.begin() + l, days);
+					break;
+				}
+			}
+		}
+		if (count == ans.size())
+			break;
+	}
+}
+void other_iteration_calculate(std::vector<std::vector<float>>& show, std::vector<std::string>& show_title, std::vector<int>& num_days,
+	float i, int j)
+{
+	//std::vector<std::vector<float>> show_temp;
+	//show_temp = show;
+	//std::vector<std::string> show_title_temp;
+	//show_title_temp = show_title;
+	//std::vector<int> num_days_temp;
+	//num_days_temp = num_days;
+	std::string temp_title = "";
+	std::vector<std::vector<unsigned short>> cc;
+	std::vector<std::vector<int>> bb;
+	for (auto &x : ccc)
+	{
+		temp_title = x.first;
+		cc.clear();
+		cc.push_back(x.second.first);
+		int days = 0;
+		bb = count_if_greater_than_i_for_each_column(data, date, cc, i, j + 5, days);
+		if (cc.size() == 0 || cc[0].size() < m_ConfigParam.cSmallerThan)
+			continue;
+		auto max = (float)cc[0].size() * (i * 0.02 * ((float)bb[0].size() / (float)cc[0].size())) - (float)cc[0].size() * (0.02 * (1 - ((float)bb[0].size() / (float)cc[0].size())));
+		for (int l = 0; l < show.size(); l++) {
+			if (max * 100 > show[l][5]) {
+				std::vector<float> showParam;
+				show.erase(show.end() - 1, show.end());
+				showParam.push_back(cc[0].size());
+				showParam.push_back(bb[0].size());
+				showParam.push_back(((float)bb[0].size() / (float)cc[0].size()) * 100);
+				showParam.push_back(j + 5);
+				showParam.push_back(i);
+				showParam.push_back(max * 100);
+				show.insert(show.begin() + l, showParam);
+				//mtx.lock();
+				show_title.erase(show_title.end() - 1, show_title.end());
+				show_title.insert(show_title.begin() + l, temp_title);
+
+				num_days.erase(num_days.end() - 1, num_days.end());
+				num_days.insert(num_days.begin() + l, days);
+				//mtx.unlock();
+				break;
+			}
+		}
+
+	}
+	//show = show_temp;
+	//show_title = show_title_temp;
+	//num_days = num_days_temp;
+}
 int main() {
 	auto Start = std::chrono::high_resolution_clock::now();
 	auto started = std::chrono::high_resolution_clock::now();
@@ -404,10 +546,6 @@ int main() {
 
 	started = std::chrono::high_resolution_clock::now();
 
-	std::vector<std::vector<float>> data;
-	std::vector<std::vector<std::vector<float>>> dataMonth;
-	std::vector<std::string> title;
-	std::vector<tm> date;
 	read_from_excel_file(m_ConfigParam.fileName, m_ConfigParam.columnNumber + 1, data, title, date);
 
 	done = std::chrono::high_resolution_clock::now();
@@ -417,155 +555,47 @@ int main() {
 
 	started = std::chrono::high_resolution_clock::now();
 
-	std::vector<int> inMonth(m_ConfigParam.maxOutput,0);
+	std::vector<int> inMonth(m_ConfigParam.maxOutput, 0);
 	std::vector<int> num_days(m_ConfigParam.maxOutput);
 	std::vector<std::string> show_title(m_ConfigParam.maxOutput);
 	std::vector<std::vector<float>> show(m_ConfigParam.maxOutput);
 	for (int j = 0; j < m_ConfigParam.maxOutput; j++)
 		show[j] = std::vector<float>(6,-1000);
 
-	std::vector<std::vector<std::vector<float>>> show_final;
-
-
 	int numberOfK = (m_ConfigParam.endKColumn - m_ConfigParam.beginKColumn) + 1;
 	int numberOfJ = (m_ConfigParam.endJColumn - m_ConfigParam.beginJColumn) + 1;
-	std::map<std::string, std::pair<std::vector<unsigned short>,std::vector<byte>>> ccc;
-	std::vector<std::vector<std::vector<byte>>> ans;
-	std::vector<std::vector<unsigned short>> cc;
-	std::vector<std::vector<int>> bb;
 
-	std::vector<std::vector<unsigned short>> c;
 
-	//std::vector<std::vector<std::string>> erase_map;
-	//std::vector<std::string> temp_erase_map(1,"");
-	int time = 0;
-
-	for (int k = 1; k <= m_ConfigParam.combination; k++)
-	{
-		ans.push_back(makeCombi(numberOfK, k));
-	}
-
+	std::vector<std::thread> th1(m_ConfigParam.IValues.size() * numberOfJ - 1);
 	c = count_one_in_each_column(data, m_ConfigParam.beginKColumn - 3, m_ConfigParam.endKColumn - 3);
-	for (float i : m_ConfigParam.IValues)
+	for (int i = 0; i< m_ConfigParam.IValues.size();i++)
 	{
 		for (int j = 0; j < numberOfJ; j++)
 		{
-			if (j == 0 && i == m_ConfigParam.IValues[0])
+			if (j == 0 && i == 0)
 			{
-				//auto started = std::chrono::high_resolution_clock::now();
-				for (int k = 1; k <= m_ConfigParam.combination; k++)
-				{
-					//erase_map.push_back(temp_erase_map);
-					//temp_erase_map.clear();
-					//ans.clear();
-					//ans = makeCombi(numberOfK, k);
-					int count = 0;
-					for (int x = 0; x < ans[k - 1].size(); x++) {
-						std::vector<std::vector<unsigned short>> temp;
-						std::string temp_title = "";
-						//std::string key_map = "";
-						cc.clear();
-						std::vector<byte> t;
-						for (int p = 0; p < ans[k - 1][x].size(); p++) {
-							//key_map += std::to_string(ans[k - 1][x][p]) + "-";
-							temp_title += title[ans[k - 1][x][p] + m_ConfigParam.beginKColumn - 2] + "--";
-							if (ans[k - 1][x].size() - p == 2)
-							{
-								if (ccc.find(temp_title) != ccc.end())
-									temp.push_back(ccc[temp_title].first);
-								else
-									break;
-							}
-							if (ans[k - 1][x].size() - p == 1)
-								temp.push_back(c[ans[k - 1][x][p] - 1]);
-							t.push_back(ans[k - 1][x][p]);
-						}
-						if (temp.size() > 1)
-							cc.push_back(common_elements(temp));
-						else if (temp.size() == 1)
-							cc.push_back(temp[0]);
-
-						if (cc.size() != 0)
-							if (cc[0].size() != 0)
-							{
-								ccc[temp_title] = std::make_pair(cc[0], t);
-							}
-							else
-								count++;
-						else
-							count++;
-
-						t.clear();
-						int days = 0;
-						bb.clear();
-						bb = count_if_greater_than_i_for_each_column(data, date, cc, i, j + 5, days);
-						if (cc.size() == 0 || cc[0].size() < m_ConfigParam.cSmallerThan)
-							continue;
-						auto max = (float)cc[0].size() * (i * 0.02 * ((float)bb[0].size() / (float)cc[0].size())) - (float)cc[0].size() * (0.02 * (1 - ((float)bb[0].size() / (float)cc[0].size())));
-						for (int l = 0; l < show.size(); l++) {
-							if (max * 100 > show[l][5]) {
-								std::vector<float> showParam;
-								show.erase(show.end() - 1, show.end());
-								showParam.push_back(cc[0].size());
-								showParam.push_back(bb[0].size());
-								showParam.push_back(((float)bb[0].size() / (float)cc[0].size()) * 100);
-								showParam.push_back(j + 5);
-								showParam.push_back(i);
-								showParam.push_back(max * 100);
-								show.insert(show.begin() + l, showParam);
-								showParam.clear();
-
-								show_title.erase(show_title.end() - 1, show_title.end());
-								show_title.insert(show_title.begin() + l, temp_title);
-
-								num_days.erase(num_days.end() - 1, num_days.end());
-								num_days.insert(num_days.begin() + l, days);
-								break;
-							}
-						}
-					}
-					if (count == ans[k - 1].size())
-						break;
-				}
+				auto s = std::chrono::high_resolution_clock::now();
+				first_iteration_calculate(show,show_title,num_days, m_ConfigParam.IValues[i],j);
+				auto st = std::chrono::high_resolution_clock::now();
+				auto e = std::chrono::duration_cast<std::chrono::milliseconds>(st - s).count();
+				std::cout << "First Iteration Execution Time: " << e << " milliseconds"
+					<< std::endl;
+				ans.clear();
 			}
 			else
 			{
-				std::string temp_title = "";
-				for (auto x : ccc)
-				{
-					cc.clear();
-					temp_title = x.first;
-					cc.push_back(x.second.first);
-					int days = 0;
-					bb.clear();
-					bb = count_if_greater_than_i_for_each_column(data, date, cc, i, j + 5, days);
-					if (cc.size() == 0 || cc[0].size() < m_ConfigParam.cSmallerThan)
-						continue;
-					auto max = (float)cc[0].size() * (i * 0.02 * ((float)bb[0].size() / (float)cc[0].size())) - (float)cc[0].size() * (0.02 * (1 - ((float)bb[0].size() / (float)cc[0].size())));
-					for (int l = 0; l < show.size(); l++) {
-						if (max * 100 > show[l][5]) {
-							std::vector<float> showParam;
-							show.erase(show.end() - 1, show.end());
-							showParam.push_back(cc[0].size());
-							showParam.push_back(bb[0].size());
-							showParam.push_back(((float)bb[0].size() / (float)cc[0].size()) * 100);
-							showParam.push_back(j + 5);
-							showParam.push_back(i);
-							showParam.push_back(max * 100);
-							show.insert(show.begin() + l, showParam);
-
-							show_title.erase(show_title.end() - 1, show_title.end());
-							show_title.insert(show_title.begin() + l, temp_title);
-
-							num_days.erase(num_days.end() - 1, num_days.end());
-							num_days.insert(num_days.begin() + l, days);
-							break;
-						}
-					}
-				}
+				//th1[(j + numberOfJ * i)-1] = std::thread(other_iteration_calculate, std::ref(show), std::ref(show_title), std::ref(num_days), m_ConfigParam.IValues[i], j);
+				other_iteration_calculate(show, show_title, num_days, m_ConfigParam.IValues[i], j);
 			}
 		}
 	}
+	//for (int i = 0; i < m_ConfigParam.IValues.size(); i++)
+	//{
+	//	for (int j = 1; j < numberOfJ; j++)
+	//	{
+	//		th1[(j + numberOfJ * i) - 1].join();
+	//	}
+	//}
 	done = std::chrono::high_resolution_clock::now();
 	execute_time_second = std::chrono::duration_cast<std::chrono::milliseconds>(done - started).count();
 	std::cout << "Algorithm Execution Time: " << execute_time_second << " milliseconds"
@@ -576,6 +606,8 @@ int main() {
 	show_final.push_back(show);
 	c.clear();
 	split_data_to_month(data, date, dataMonth);
+	std::vector<std::vector<unsigned short>> cc;
+	std::vector<std::vector<int>> bb;
 	for (int m = 0; m < dataMonth.size(); m++)
 	{
 		c = count_one_in_each_column(dataMonth[m], m_ConfigParam.beginKColumn - 3, m_ConfigParam.endKColumn - 3);
@@ -615,7 +647,7 @@ int main() {
 	}
 	done = std::chrono::high_resolution_clock::now();
 	execute_time_second = std::chrono::duration_cast<std::chrono::milliseconds>(done - started).count();
-	std::cout <<"Split in Month Time: "<< execute_time_second << " milliseconds"
+	std::cout <<"Split to month Time: "<< execute_time_second << " milliseconds"
 		<< std::endl;
 
 

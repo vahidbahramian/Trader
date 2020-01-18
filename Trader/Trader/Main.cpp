@@ -359,13 +359,22 @@ void PermGenerator(int n, int k)
 	} while (next_permutation(d.begin(), d.end()));
 }
 void makeCombiUtil(std::vector<std::vector<byte> >& ans,
-	std::vector<byte>& tmp, int n, int left, int k, std::mutex& mtx)
+	std::vector<byte>& tmp, int n, int left, int k, std::mutex& mtx, std::vector<std::vector<byte>>& tt)
 {
+	if (k == 1 && tt.size() > 0)
+	{
+		bool isPresent = std::find(tt.begin(), tt.end(), tmp) != tt.end();
+		if (!isPresent)
+			return;
+	}
+		
 	// Pushing this vector to a vector of vector 
 	if (k == 0) {
 		//const std::lock_guard<std::mutex> lock(mtx);
 		//while (!mtx.try_lock());
 		mtx.lock();
+
+		//bool result = std::equal(vecOfNums1.begin(), vecOfNums1.end(), vecOfNums2.begin());
 		ans.push_back(tmp);
 		mtx.unlock();
 		return;
@@ -376,7 +385,7 @@ void makeCombiUtil(std::vector<std::vector<byte> >& ans,
 	for (int i = left; i <= n; ++i)
 	{
 		tmp.push_back(i);
-		makeCombiUtil(ans, tmp, n, i + 1, k - 1, mtx);
+		makeCombiUtil(ans, tmp, n, i + 1, k - 1, mtx , tt);
 		// Popping out last inserted element 
 		// from the vector 
 		//tmp.pop_back();
@@ -387,10 +396,10 @@ void makeCombiUtil(std::vector<std::vector<byte> >& ans,
 
 // Prints all combinations of size k of numbers 
 // from 1 to n. 
-void makeCombi(std::vector<std::vector<byte>>& ans, int n, int k, std::mutex& mtx)
+void makeCombi(std::vector<std::vector<byte>>& ans, int n, int k, std::mutex& mtx, std::vector<std::vector<byte>> tt)
 {
 	std::vector<byte> tmp;
-	makeCombiUtil(ans, tmp, n, 1, k, mtx);
+	makeCombiUtil(ans, tmp, n, 1, k, mtx, tt);
 	end_of_thread = true;
 
 }
@@ -418,17 +427,19 @@ void first_iteration_calculate(std::vector<std::vector<float>>& show, std::vecto
 	auto Last_Fisrt = First;
 	std::vector<std::vector<unsigned short>> cc;
 	std::vector<std::vector<int>> bb;
+	std::vector<std::vector<byte>> tt;
 	std::thread th1;
 	for (int k = 1; k <= m_ConfigParam.combination; k++)
 	{
 		std::mutex mtx;
 		std::vector<std::vector<byte>> ans;
-		th1 = std::thread(makeCombi, std::ref(ans), m_ConfigParam.combination, k, std::ref(mtx));
+		th1 = std::thread(makeCombi, std::ref(ans), m_ConfigParam.combination, k, std::ref(mtx), tt);
+		tt.clear();
 		end_of_thread = false;
 		std::cout << "k = " << k << "\n";
 		long long int count = 0;
 		long long int x = 0;
-		//Sleep(1000);
+		//Sleep(0.00001);
 		while (!end_of_thread || ans.size() != 0)
 		{
 
@@ -469,6 +480,7 @@ void first_iteration_calculate(std::vector<std::vector<float>>& show, std::vecto
 					if (cc[0].size() >= m_ConfigParam.cSmallerThan)
 					{
 						ccc[temp_title] = std::make_pair(cc[0], t);
+						tt.push_back(t);
 					}
 					else
 						count++;
